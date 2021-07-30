@@ -22,10 +22,13 @@ A modal Mouse Key meant to entirely replace the mouse
 
 *Modes:*
 0/Insert: toggle fast or slow movement
+
 ./Del: toggle right or left click
 
 Rattus is under active development.
+
 TODO: 
+
 1. block numpad keycodes; currently this types into selection
 2. add more modes: 
    -moving to a quadrant/octant of the screen
