@@ -3,13 +3,21 @@ A modal Mouse Key meant to entirely replace the mouse
 
 *Keys:*
 5: click
+
 7: diagonal-up
+
 8: up
+
 9: diagonal-up
+
 4: left
+
 6: right
+
 1: down-left
+
 2: down
+
 3: down-right
 
 *Modes:*
