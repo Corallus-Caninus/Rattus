@@ -21,6 +21,7 @@ A modal Mouse Key meant to entirely replace the mouse
 3: down-right
 
 *Modes:*
+
 0/Insert: toggle fast or slow movement
 
 ./Del: toggle right or left click
