@@ -34,8 +34,11 @@ TODO:
 1. block numpad keycodes; currently this types into selection
 2. create Rattus.service or other integration
 3. add more modes: 
+   
    -click and hold mode
+   
    -moving to a quadrant/octant of the screen
+   
    -record macro for repeating movements and clicks (also typing?)
 
 
