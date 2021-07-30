@@ -1,5 +1,5 @@
 # Rattus
-A modal Mouse Key meant to entirely replace the mouse
+A modal Mouse Key meant to entirely replace the mouse Currently tested on Linux may work on Windows
 
 *Keys:*
 
