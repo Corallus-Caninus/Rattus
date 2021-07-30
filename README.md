@@ -2,6 +2,7 @@
 A modal Mouse Key meant to entirely replace the mouse
 
 *Keys:*
+
 5: click
 
 7: diagonal-up
