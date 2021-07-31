@@ -5,6 +5,7 @@ name = "Rattus"
 version = "0.1.0"
 dependencies = [
  "inputbot",
+ "x11",
 ]
 
 [[package]]
@@ -83,8 +84,7 @@ dependencies = [
 [[package]]
 name = "inputbot"
 version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13984e4f1d0ff785e594df7328f023a2482bf77a8025cb9e6e67ec3020bbc208"
+source = "git+https://github.com/Corallus-Caninus/inputbot.git?branch=develop#a4940a0a19b7652612cd870403b10bc855d914c4"
 dependencies = [
  "input",
  "libc",
