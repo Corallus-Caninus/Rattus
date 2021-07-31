@@ -35,11 +35,18 @@ TODO:
 2. create Rattus.service or other integration
 3. add more modes: 
    
-   -click and hold mode
+   -click and hold mode *done
    
-   -moving to a quadrant/octant of the screen
+   -record macro for repeating movements and clicks (also typing?) "Robot Mode"
+      press enter on numpad then any of the numbers for a pre recorded operation at cursor position
+      (9 "save slots")
    
-   -record macro for repeating movements and clicks (also typing?)
+   -enter numbers like normal keypad (arrows for navigation is num lock toggle this would be seperate) by holding shift
+   
+   -scroll wheel mode (1,2,3 are slow medium and fast down scroll respectively etc.) with the * button
+   
+   -history mode move to last click positions in buffer (up to n number of click positions) by tapping + to go back 
+    and - forward up to cursor position when search began
 
 
 Currently tested with command:
