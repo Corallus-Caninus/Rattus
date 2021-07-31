@@ -23,11 +23,11 @@ fn main() {
     let move_frequency = args.pop().unwrap() as u64;
 
     //using Arc Mutex Refcell isnt ideal but its still fast and NKRO complete. would prefer lifetime only but needs sync
-    //whether 5 left or right clicks
     let left_click_active = Arc::new(Mutex::new(RefCell::new(Box::new(true))));
-    let left_click_counted = left_click_active.clone();
+    let left_click_toggle = left_click_active.clone();
+    let left_click_hold = left_click_active.clone();
 
-    //create create is fast for up down left right and all diagonals
+    //create is_fast for up down left right and all diagonals
     let is_fast = Arc::new(Mutex::new(RefCell::new(Box::new(true))));
     let is_up_fast = is_fast.clone();
     let is_down_fast = is_fast.clone();
@@ -262,8 +262,8 @@ fn main() {
     MouseKeyClickToggle.bind(move || {
         if NumLockKey.is_toggled() {
             //toggle whether left click is counted for num pad five
-            let cur_value = **left_click_counted.to_owned().lock().unwrap().borrow();
-            left_click_counted
+            let cur_value = **left_click_toggle.to_owned().lock().unwrap().borrow();
+            left_click_toggle
                 .to_owned()
                 .lock()
                 .unwrap()
@@ -302,7 +302,12 @@ fn main() {
     NumpadPlusKey.bind(move || {
         if NumLockKey.is_toggled() {
             //hold left click, released by another 5 left click
-            MouseButton::LeftButton.press();
+            if *left_click_hold.lock().unwrap().borrow().clone() {
+                MouseButton::LeftButton.press();
+            } else {
+                //right
+                MouseButton::RightButton.press();
+            }
         }
     });
 
