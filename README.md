@@ -5,11 +5,11 @@ A modal Mouse Key meant to entirely replace the mouse Currently tested on Linux 
 
 5: click
 
-7: diagonal-up
+7: up-left
 
 8: up
 
-9: diagonal-up
+9: up-righ
 
 4: left
 
