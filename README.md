@@ -31,7 +31,7 @@ Rattus is under active development.
 
 TODO: 
 
-1. block numpad keycodes; currently this types into selection
+1. block numpad keycodes; currently this types into selection *done
 2. create Rattus.service or other integration
 3. add more modes: 
    
