@@ -9,7 +9,7 @@ A modal Mouse Key meant to entirely replace the mouse Currently tested on Linux 
 
 8: up
 
-9: up-righ
+9: up-right
 
 4: left
 
