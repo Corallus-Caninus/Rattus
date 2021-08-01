@@ -4,6 +4,7 @@ use inputbot::{
 use x11::{xinput2, xlib};
 //import crate for delay
 use std;
+use std::collections::HashMap;
 use std::env;
 use std::thread::sleep;
 use std::time::Duration;
@@ -12,6 +13,13 @@ use std::boxed::Box;
 use std::cell::{Cell, RefCell};
 use std::sync::{Arc, Mutex};
 
+//a single action of the mouse
+//TODO serialize and save these to dot file
+struct mouse_action {
+    //whatever the precision of the monitor is
+    location: (i64, i64),
+    is_clicked: bool,
+}
 fn main() {
     let args = env::args().skip(1).collect::<Vec<String>>();
     let mut args = args
@@ -21,6 +29,12 @@ fn main() {
     let fast_speed = args.pop().unwrap();
     let slow_speed = args.pop().unwrap();
     let move_frequency = args.pop().unwrap() as u64;
+
+    //the history buffer of mouse clicks and current location
+    // let mut history = vec![];
+    //the stored procedures of the mouse where keys are 1-9 and values are
+    //vectors of postitions and possible clicks
+    // let mut robots = HashMap::new();
 
     //using Arc Mutex Refcell isnt ideal but its still fast and NKRO complete. would prefer lifetime only but needs sync
     let left_click_active = Arc::new(Mutex::new(RefCell::new(Box::new(true))));
@@ -48,6 +62,11 @@ fn main() {
     let is_numlock_on_up_right = is_numlock_on.clone();
     let is_numlock_on_down_left = is_numlock_on.clone();
     let is_numlock_on_down_right = is_numlock_on.clone();
+    let is_numlock_on_click_toggle = is_numlock_on.clone();
+    //need to do fast plus middle
+    let is_numlock_on_fast = is_numlock_on.clone();
+    let is_numlock_on_plus = is_numlock_on.clone();
+    let is_numlock_on_middle = is_numlock_on.clone();
 
     // would prefer to use the x .so but couldnt find in the SDK
     //      consider xmodmap -e "remove <key> <key>" to remap keys to unused keys
@@ -66,7 +85,7 @@ fn main() {
     // keycode  89 = KP_Next KP_3 KP_Next KP_3
     // keycode  90 = KP_Insert KP_0 KP_Insert KP_0
     // keycode  91 = KP_Delete KP_Decimal KP_Delete KP_Decimal
-    // we are counting from three hundred since these values are unused in the scan codes
+    // we are counting from three hundred since these values are unused in the scan codes (think virtual sockets)
     //TODO: restore default on close if no better solution found
     std::process::Command::new("xmodmap")
         .args(&["-e", r#"keycode 79 = KP_Home 300 KP_Home 300"#])
@@ -124,7 +143,8 @@ fn main() {
     //NOTE: these should have been in a macro dont blame rust for my bad code
     //Numpad8Key.bind(|| {
     MouseKeyUp.bind(move || {
-        if NumLockKey.is_toggled() {
+        //if NumLockKey.is_toggled() {
+        if *is_numlock_on_up.lock().unwrap().borrow().clone() {
             while MouseKeyUp.is_pressed() {
                 //move up with fast or slow speed
                 if *is_up_fast.lock().unwrap().borrow().clone() {
@@ -141,7 +161,7 @@ fn main() {
     });
     //Numpad2Key.bind(|| {
     MouseKeyDown.bind(move || {
-        if NumLockKey.is_toggled() {
+        if *is_numlock_on_down.lock().unwrap().borrow().clone() {
             while MouseKeyDown.is_pressed() {
                 //move down with fast or slow speed
                 if *is_down_fast.lock().unwrap().borrow().clone() {
@@ -158,7 +178,8 @@ fn main() {
     });
     //Numpad4Key.bind(|| {
     MouseKeyLeft.bind(move || {
-        if NumLockKey.is_toggled() {
+        //if NumLockKey.is_toggled() {
+        if *is_numlock_on_left.lock().unwrap().borrow().clone() {
             while MouseKeyLeft.is_pressed() {
                 //move left with fast or slow speed
                 if *is_left_fast.lock().unwrap().borrow().clone() {
@@ -175,7 +196,8 @@ fn main() {
     });
     //Numpad6Key.bind(|| {
     MouseKeyRight.bind(move || {
-        if NumLockKey.is_toggled() {
+        //if NumLockKey.is_toggled() {
+        if *is_numlock_on_right.lock().unwrap().borrow().clone() {
             while MouseKeyRight.is_pressed() {
                 //move right with fast or slow speed
                 if *is_right_fast.lock().unwrap().borrow().clone() {
@@ -190,9 +212,11 @@ fn main() {
             }
         }
     });
+
     //Numpad7Key.bind(|| {
     MouseKeyUpperLeft.bind(move || {
-        if NumLockKey.is_toggled() {
+        //if NumLockKey.is_toggled() {
+        if *is_numlock_on_up_left.lock().unwrap().borrow().clone() {
             while MouseKeyUpperLeft.is_pressed() {
                 //move up left with fast or slow speed
                 if *is_up_left_fast.lock().unwrap().borrow().clone() {
@@ -209,7 +233,8 @@ fn main() {
     });
     //Numpad9Key.bind(|| {
     MouseKeyUpperRight.bind(move || {
-        if NumLockKey.is_toggled() {
+        //if NumLockKey.is_toggled() {
+        if *is_numlock_on_up_right.lock().unwrap().borrow().clone() {
             while MouseKeyUpperRight.is_pressed() {
                 //move up right with fast or slow speed
                 if *is_up_right_fast.lock().unwrap().borrow().clone() {
@@ -226,7 +251,8 @@ fn main() {
     });
     //Numpad3Key.bind(|| {
     MouseKeyLowerRight.bind(move || {
-        if NumLockKey.is_toggled() {
+        //if NumLockKey.is_toggled() {
+        if *is_numlock_on_down_right.lock().unwrap().borrow().clone() {
             while MouseKeyLowerRight.is_pressed() {
                 //move down right with fast or slow speed
                 if *is_down_right_fast.lock().unwrap().borrow().clone() {
@@ -243,7 +269,8 @@ fn main() {
     });
     //Numpad1Key.bind(|| {
     MouseKeyLowerLeft.bind(move || {
-        if NumLockKey.is_toggled() {
+        //if NumLockKey.is_toggled() {
+        if *is_numlock_on_down_left.lock().unwrap().borrow().clone() {
             while MouseKeyLowerLeft.is_pressed() {
                 //move down left with fast or slow speed
                 if *is_down_left_fast.lock().unwrap().borrow().clone() {
@@ -260,7 +287,8 @@ fn main() {
     });
 
     MouseKeyClickToggle.bind(move || {
-        if NumLockKey.is_toggled() {
+        //if NumLockKey.is_toggled() {
+        if *is_numlock_on_click_toggle.lock().unwrap().borrow().clone() {
             //toggle whether left click is counted for num pad five
             let cur_value = **left_click_toggle.to_owned().lock().unwrap().borrow();
             left_click_toggle
@@ -272,7 +300,8 @@ fn main() {
     });
     //Numpad1Key.bind(|| {
     MouseKeyFastToggle.bind(move || {
-        if NumLockKey.is_toggled() {
+        //if NumLockKey.is_toggled() {
+        if *is_numlock_on_fast.lock().unwrap().borrow().clone() {
             //set fast speed
             let cur_value = **is_fast.clone().lock().unwrap().borrow();
             is_fast
@@ -282,9 +311,20 @@ fn main() {
                 .replace(Box::new(!cur_value));
         }
     });
+    //toggle is numlock on each time num lock key is pressed
+    NumLockKey.bind(move || {
+        let cur_value = **is_numlock_on.clone().lock().unwrap().borrow();
+        is_numlock_on
+            .to_owned()
+            .lock()
+            .unwrap()
+            .replace(Box::new(!cur_value));
+    });
+
     //Numpad5Key.bind(|| {
     MouseKeyMiddle.bind(move || {
-        if NumLockKey.is_toggled() {
+        //if NumLockKey.is_toggled() {
+        if *is_numlock_on_middle.lock().unwrap().borrow().clone() {
             //toggle left click
             let cur_value = *left_click_active.lock().unwrap().borrow().clone();
             if cur_value.clone() {
@@ -300,7 +340,8 @@ fn main() {
     });
     //TODO: ensure this is moved to new signal
     NumpadPlusKey.bind(move || {
-        if NumLockKey.is_toggled() {
+        //if NumLockKey.is_toggled() {
+        if **is_numlock_on_plus.lock().unwrap().borrow() {
             //hold left click, released by another 5 left click
             if *left_click_hold.lock().unwrap().borrow().clone() {
                 MouseButton::LeftButton.press();
