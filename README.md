@@ -51,7 +51,8 @@ TODO:
     
    -prediction mode toggle mode then move. when a TF model determines with confidence threshold where the next click or hover will occur it
     moves to that position interrupting user input. model takes input vector: ffmpeg or X11 equivalent of screen and mouse data outputs 
-    probability and position (cannot click can only teleport then exit predict mode). use reinforcement learning to train online
+    probability and position (cannot click can only teleport then exit predict mode). If user doesnt click or hover within a bounding box 
+    of teleport destination the prediction was incorrect else correct use reinforcement learning to train online
     .
 
 
