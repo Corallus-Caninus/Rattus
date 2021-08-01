@@ -41,12 +41,18 @@ TODO:
       press enter on numpad then any of the numbers for a pre recorded operation at cursor position
       (9 "save slots")
    
-   -enter numbers like normal keypad (arrows for navigation is num lock toggle this would be seperate) by holding shift
+   -rewrite numlock as arrow and number modes and use stateful representation since NKRO can cause numlock 
+    keycode packet headers to arrive out of order.
    
    -scroll wheel mode (1,2,3 are slow medium and fast down scroll respectively etc.) with the * button
    
    -history mode move to last click positions in buffer (up to n number of click positions) by tapping + to go back 
     and - forward up to cursor position when search began
+    
+   -prediction mode toggle mode then move. when a TF model determines with confidence threshold where the next click or hover will occur it
+    moves to that position interrupting user input. model takes input vector: ffmpeg or X11 equivalent of screen and mouse data outputs 
+    probability and position (cannot click can only teleport then exit predict mode). use reinforcement learning to train online
+    .
 
 
 Currently tested with command:
