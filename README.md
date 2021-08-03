@@ -23,7 +23,7 @@ A modal Mouse Key meant to entirely replace the mouse Currently tested on Linux 
 
 *Modes:*
 
-0/Insert: toggle fast or slow movement
+0/Insert: hold for fast movement
 
 ./Del: toggle right or left click
 
