@@ -350,6 +350,7 @@ fn main() {
             is_fast.to_owned().lock().unwrap().replace(Box::new(true));
             // fast is not modal for ergonomics.
             while MouseKeyFast.is_pressed() {
+                sleep(Duration::from_millis(move_frequency));
                 continue;
             }
             is_fast.to_owned().lock().unwrap().replace(Box::new(false));
