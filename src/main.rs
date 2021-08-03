@@ -152,7 +152,7 @@ fn main() {
         .unwrap();
     //KP_Insert
     std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 90 = KP_Insert 311"#])
+        .args(&["-e", r#"keycode 90 = 311"#])
         .output()
         .unwrap();
     //KP_Delete
@@ -191,12 +191,12 @@ fn main() {
                 //move up with fast or slow speed
                 if *is_up_fast.lock().unwrap().borrow().clone() {
                     //move up with fast speed
-                    MouseCursor::move_abs(0, -fast_speed);
-                    sleep(Duration::from_millis(move_frequency));
+                    MouseCursor::move_abs(0, -1);
+                    sleep(Duration::from_millis(move_frequency / fast_speed as u64));
                 } else {
                     //move up with slow speed
-                    MouseCursor::move_abs(0, -slow_speed);
-                    sleep(Duration::from_millis(move_frequency));
+                    MouseCursor::move_abs(0, -1);
+                    sleep(Duration::from_millis(move_frequency / slow_speed as u64));
                 }
             }
             //TODO: else Numpad8Key.press();
@@ -209,12 +209,12 @@ fn main() {
                 //move down with fast or slow speed
                 if *is_down_fast.lock().unwrap().borrow().clone() {
                     //move down with fast speed
-                    MouseCursor::move_abs(0, fast_speed);
-                    sleep(Duration::from_millis(move_frequency));
+                    MouseCursor::move_abs(0, 1);
+                    sleep(Duration::from_millis(move_frequency / fast_speed as u64));
                 } else {
                     //move down with slow speed
-                    MouseCursor::move_abs(0, slow_speed);
-                    sleep(Duration::from_millis(move_frequency));
+                    MouseCursor::move_abs(0, 1);
+                    sleep(Duration::from_millis(move_frequency / slow_speed as u64));
                 }
             }
         }
@@ -227,12 +227,12 @@ fn main() {
                 //move left with fast or slow speed
                 if *is_left_fast.lock().unwrap().borrow().clone() {
                     //move left with fast speed
-                    MouseCursor::move_abs(-fast_speed, 0);
-                    sleep(Duration::from_millis(move_frequency));
+                    MouseCursor::move_abs(-1, 0);
+                    sleep(Duration::from_millis(move_frequency / fast_speed as u64));
                 } else {
                     //move left with slow speed
-                    MouseCursor::move_abs(-slow_speed, 0);
-                    sleep(Duration::from_millis(move_frequency));
+                    MouseCursor::move_abs(-1, 0);
+                    sleep(Duration::from_millis(move_frequency / slow_speed as u64));
                 }
             }
         }
@@ -245,12 +245,12 @@ fn main() {
                 //move right with fast or slow speed
                 if *is_right_fast.lock().unwrap().borrow().clone() {
                     //move right with fast speed
-                    MouseCursor::move_abs(fast_speed, 0);
-                    sleep(Duration::from_millis(move_frequency));
+                    MouseCursor::move_abs(1, 0);
+                    sleep(Duration::from_millis(move_frequency / fast_speed as u64));
                 } else {
                     //move right with slow speed
-                    MouseCursor::move_abs(slow_speed, 0);
-                    sleep(Duration::from_millis(move_frequency));
+                    MouseCursor::move_abs(1, 0);
+                    sleep(Duration::from_millis(move_frequency / slow_speed as u64));
                 }
             }
         }
@@ -264,12 +264,12 @@ fn main() {
                 //move up left with fast or slow speed
                 if *is_up_left_fast.lock().unwrap().borrow().clone() {
                     //move up left with fast speed
-                    MouseCursor::move_abs(-fast_speed, -fast_speed);
-                    sleep(Duration::from_millis(move_frequency));
+                    MouseCursor::move_abs(-1, -1);
+                    sleep(Duration::from_millis(move_frequency / fast_speed as u64));
                 } else {
                     //move up left with slow speed
-                    MouseCursor::move_abs(-slow_speed, -slow_speed);
-                    sleep(Duration::from_millis(move_frequency));
+                    MouseCursor::move_abs(-1, -1);
+                    sleep(Duration::from_millis(move_frequency / slow_speed as u64));
                 }
             }
         }
@@ -282,12 +282,12 @@ fn main() {
                 //move up right with fast or slow speed
                 if *is_up_right_fast.lock().unwrap().borrow().clone() {
                     //move up right with fast speed
-                    MouseCursor::move_abs(fast_speed, -fast_speed);
-                    sleep(Duration::from_millis(move_frequency));
+                    MouseCursor::move_abs(1, -1);
+                    sleep(Duration::from_millis(move_frequency / fast_speed as u64));
                 } else {
                     //move up right with slow speed
-                    MouseCursor::move_abs(slow_speed, -slow_speed);
-                    sleep(Duration::from_millis(move_frequency));
+                    MouseCursor::move_abs(1, -1);
+                    sleep(Duration::from_millis(move_frequency / slow_speed as u64));
                 }
             }
         }
@@ -300,12 +300,12 @@ fn main() {
                 //move down right with fast or slow speed
                 if *is_down_right_fast.lock().unwrap().borrow().clone() {
                     //move down right with fast speed
-                    MouseCursor::move_abs(fast_speed, fast_speed);
-                    sleep(Duration::from_millis(move_frequency));
+                    MouseCursor::move_abs(1, 1);
+                    sleep(Duration::from_millis(move_frequency / fast_speed as u64));
                 } else {
                     //move down right with slow speed
-                    MouseCursor::move_abs(slow_speed, slow_speed);
-                    sleep(Duration::from_millis(move_frequency));
+                    MouseCursor::move_abs(1, 1);
+                    sleep(Duration::from_millis(move_frequency / slow_speed as u64));
                 }
             }
         }
@@ -318,12 +318,12 @@ fn main() {
                 //move down left with fast or slow speed
                 if *is_down_left_fast.lock().unwrap().borrow().clone() {
                     //move down left with fast speed
-                    MouseCursor::move_abs(-fast_speed, fast_speed);
-                    sleep(Duration::from_millis(move_frequency));
+                    MouseCursor::move_abs(-1, 1);
+                    sleep(Duration::from_millis(move_frequency / fast_speed as u64));
                 } else {
                     //move down left with slow speed
-                    MouseCursor::move_abs(-slow_speed, slow_speed);
-                    sleep(Duration::from_millis(move_frequency));
+                    MouseCursor::move_abs(-1, 1);
+                    sleep(Duration::from_millis(move_frequency / slow_speed as u64));
                 }
             }
         }
