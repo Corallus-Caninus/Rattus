@@ -1,6 +1,9 @@
 use inputbot::{
     self, handle_input_events, KeySequence, KeybdKey::*, MouseButton::*, MouseCursor, *,
 };
+// use these to feed to Rat_Tunnel network and animate
+// motions such as lines to track tunnel cursor teleports
+use x11::xlib::{XGetImage, XPutImage};
 use x11::{xinput2, xlib};
 //import crate for delay
 use std;
@@ -15,11 +18,12 @@ use std::sync::{Arc, Mutex};
 
 //a single action of the mouse
 //TODO serialize and save these to dot file
-struct mouse_action {
+struct Mouse_Action {
     //whatever the precision of the monitor is
     location: (i64, i64),
     is_clicked: bool,
 }
+
 fn main() {
     let args = env::args().skip(1).collect::<Vec<String>>();
     let mut args = args
@@ -42,7 +46,7 @@ fn main() {
     let left_click_hold = left_click_active.clone();
 
     //create is_fast for up down left right and all diagonals
-    let is_fast = Arc::new(Mutex::new(RefCell::new(Box::new(true))));
+    let is_fast = Arc::new(Mutex::new(RefCell::new(Box::new(false))));
     let is_up_fast = is_fast.clone();
     let is_down_fast = is_fast.clone();
     let is_left_fast = is_fast.clone();
@@ -52,7 +56,7 @@ fn main() {
     let is_down_left_fast = is_fast.clone();
     let is_down_right_fast = is_fast.clone();
 
-    //TODO: use num lock key with mutex instead of relying on xlib toggle since it misbehaves with some numpads (mine)
+    // TODO: force this to sync with numlock on initialization
     let is_numlock_on = Arc::new(Mutex::new(RefCell::new(Box::new(true))));
     let is_numlock_on_up = is_numlock_on.clone();
     let is_numlock_on_down = is_numlock_on.clone();
@@ -86,59 +90,97 @@ fn main() {
     // keycode  90 = KP_Insert KP_0 KP_Insert KP_0
     // keycode  91 = KP_Delete KP_Decimal KP_Delete KP_Decimal
     // we are counting from three hundred since these values are unused in the scan codes (think virtual sockets)
-    //TODO: restore default on close if no better solution found
+
+    //TODO: restore default on close if no better solution found (not a priority)
+    //TODO:Num_Lock can't keep up so we need to write our own toggle using fast rust code and then pass through the
+    //     num pad arrow keys and numbers respectively
+    //     start by removing kp instructions here
+    //KP_Home
     std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 79 = KP_Home 300 KP_Home 300"#])
+        .args(&["-e", r#"keycode 79 = 300"#])
         .output()
         .unwrap();
+    //KP_Up
     std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 80 = KP_Up 301 KP_Up 301"#])
+        .args(&["-e", r#"keycode 80 = 301"#])
         .output()
         .unwrap();
+    //KP_Prior
     std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 81 = KP_Prior 302 KP_Prior 302"#])
+        .args(&["-e", r#"keycode 81 = 302"#])
         .output()
         .unwrap();
+    //KP_Subtract
     std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 82 = KP_Subtract 303 KP_Subtract 303"#])
+        .args(&["-e", r#"keycode 82 = 303"#])
         .output()
         .unwrap();
+    //KP_Left
     std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 83 = KP_Left 304 KP_Left 304"#])
+        .args(&["-e", r#"keycode 83 = 304"#])
         .output()
         .unwrap();
+    //KP_Begin
     std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 84 = KP_Begin 305 KP_Begin 305"#])
+        .args(&["-e", r#"keycode 84 = 305"#])
         .output()
         .unwrap();
+    //KP_Right
     std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 85 = KP_Right 306 KP_Right 306"#])
+        .args(&["-e", r#"keycode 85 = 306"#])
         .output()
         .unwrap();
+    //KP_Add
     std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 86 = KP_Add 307 KP_Add 307"#])
+        .args(&["-e", r#"keycode 86 = 307"#])
         .output()
         .unwrap();
+    //KP_End
     std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 87 = KP_End 308 KP_End 308"#])
+        .args(&["-e", r#"keycode 87 = 308"#])
         .output()
         .unwrap();
+    //KP_Down
     std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 88 = KP_Down 309 KP_Down 309"#])
+        .args(&["-e", r#"keycode 88 = 309"#])
         .output()
         .unwrap();
+    //KP_Next
     std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 89 = KP_Next 310 KP_Next 310"#])
+        .args(&["-e", r#"keycode 89 = 310"#])
         .output()
         .unwrap();
+    //KP_Insert
     std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 90 = KP_Insert 311 KP_Insert 311"#])
+        .args(&["-e", r#"keycode 90 = KP_Insert 311"#])
         .output()
         .unwrap();
+    //KP_Delete
     std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 91 = KP_Delete 312 KP_Delete 312"#])
+        .args(&["-e", r#"keycode 91 = 312 312"#])
         .output()
         .unwrap();
+    //TODO: Enter key
+    std::process::Command::new("xmodmap")
+        .args(&["-e", r#"keycode 104 = 313 313"#])
+        .output()
+        .unwrap();
+    //asterisk
+    std::process::Command::new("xmodmap")
+        .args(&["-e", r#"keycode 63 = 314 314"#])
+        .output()
+        .unwrap();
+    //forward slash
+    std::process::Command::new("xmodmap")
+        .args(&["-e", r#"keycode 106 = 315 315"#])
+        .output()
+        .unwrap();
+    //also remap numlock since NKRO numpads dont arrive in order at usb
+    //hub causing entries to not have numlock signal prepended
+    // std::process::Command::new("xmodmap")
+    //     .args(&["-e", r#"keycode 77=Num_Lock NoSymbol Num_Lock"#])
+    //     .output()
+    //     .unwrap();
 
     //NOTE: these should have been in a macro dont blame rust for my bad code
     //Numpad8Key.bind(|| {
@@ -157,6 +199,7 @@ fn main() {
                     sleep(Duration::from_millis(move_frequency));
                 }
             }
+            //TODO: else Numpad8Key.press();
         }
     });
     //Numpad2Key.bind(|| {
@@ -299,19 +342,21 @@ fn main() {
         }
     });
     //Numpad1Key.bind(|| {
-    MouseKeyFastToggle.bind(move || {
+    MouseKeyFast.bind(move || {
         //if NumLockKey.is_toggled() {
         if *is_numlock_on_fast.lock().unwrap().borrow().clone() {
             //set fast speed
             let cur_value = **is_fast.clone().lock().unwrap().borrow();
-            is_fast
-                .to_owned()
-                .lock()
-                .unwrap()
-                .replace(Box::new(!cur_value));
+            is_fast.to_owned().lock().unwrap().replace(Box::new(true));
+            // fast is not modal for ergonomics.
+            while MouseKeyFast.is_pressed() {
+                continue;
+            }
+            is_fast.to_owned().lock().unwrap().replace(Box::new(false));
         }
     });
     //toggle is numlock on each time num lock key is pressed
+    // MouseKeyActivate.bind(move || {
     NumLockKey.bind(move || {
         let cur_value = **is_numlock_on.clone().lock().unwrap().borrow();
         is_numlock_on
@@ -352,11 +397,5 @@ fn main() {
         }
     });
 
-    //Numpad1Key.bind(move || {
-
-    //TODO: hold mouse toggle
-    //Numpad0Key.bind(|| {
-
     handle_input_events();
 }
-//TODO: feature for speed and acceleration etc. has to be a feature so it can be user defined easily
