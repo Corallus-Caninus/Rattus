@@ -54,10 +54,10 @@ TODO:
     probability and position (cannot click can only teleport then exit predict mode). If user doesnt click or hover within a bounding box 
     of teleport destination the prediction was incorrect else correct use reinforcement learning to train online with data from all movement 
     modes.
-    .
+    
 
 
 Currently tested with command:
-cargo build --release; sudo target/release/Rattus 100 10 100
+cargo build --release; sudo target/release/Rattus 5000 500
 
-where number arguments are: fast speed, slow speed, and output frequency
+where number arguments are: fast speed and slow speed
