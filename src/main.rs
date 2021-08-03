@@ -192,11 +192,11 @@ fn main() {
                 if *is_up_fast.lock().unwrap().borrow().clone() {
                     //move up with fast speed
                     MouseCursor::move_abs(0, -1);
-                    sleep(Duration::from_millis(move_frequency / fast_speed as u64));
+                    sleep(Duration::from_micros(fast_speed as u64));
                 } else {
                     //move up with slow speed
                     MouseCursor::move_abs(0, -1);
-                    sleep(Duration::from_millis(move_frequency / slow_speed as u64));
+                    sleep(Duration::from_micros(slow_speed as u64));
                 }
             }
             //TODO: else Numpad8Key.press();
@@ -210,11 +210,11 @@ fn main() {
                 if *is_down_fast.lock().unwrap().borrow().clone() {
                     //move down with fast speed
                     MouseCursor::move_abs(0, 1);
-                    sleep(Duration::from_millis(move_frequency / fast_speed as u64));
+                    sleep(Duration::from_micros(fast_speed as u64));
                 } else {
                     //move down with slow speed
                     MouseCursor::move_abs(0, 1);
-                    sleep(Duration::from_millis(move_frequency / slow_speed as u64));
+                    sleep(Duration::from_micros(slow_speed as u64));
                 }
             }
         }
@@ -228,11 +228,11 @@ fn main() {
                 if *is_left_fast.lock().unwrap().borrow().clone() {
                     //move left with fast speed
                     MouseCursor::move_abs(-1, 0);
-                    sleep(Duration::from_millis(move_frequency / fast_speed as u64));
+                    sleep(Duration::from_micros(fast_speed as u64));
                 } else {
                     //move left with slow speed
                     MouseCursor::move_abs(-1, 0);
-                    sleep(Duration::from_millis(move_frequency / slow_speed as u64));
+                    sleep(Duration::from_micros(slow_speed as u64));
                 }
             }
         }
@@ -246,11 +246,11 @@ fn main() {
                 if *is_right_fast.lock().unwrap().borrow().clone() {
                     //move right with fast speed
                     MouseCursor::move_abs(1, 0);
-                    sleep(Duration::from_millis(move_frequency / fast_speed as u64));
+                    sleep(Duration::from_micros(fast_speed as u64));
                 } else {
                     //move right with slow speed
                     MouseCursor::move_abs(1, 0);
-                    sleep(Duration::from_millis(move_frequency / slow_speed as u64));
+                    sleep(Duration::from_micros(slow_speed as u64));
                 }
             }
         }
@@ -265,11 +265,11 @@ fn main() {
                 if *is_up_left_fast.lock().unwrap().borrow().clone() {
                     //move up left with fast speed
                     MouseCursor::move_abs(-1, -1);
-                    sleep(Duration::from_millis(move_frequency / fast_speed as u64));
+                    sleep(Duration::from_micros(fast_speed as u64));
                 } else {
                     //move up left with slow speed
                     MouseCursor::move_abs(-1, -1);
-                    sleep(Duration::from_millis(move_frequency / slow_speed as u64));
+                    sleep(Duration::from_micros(slow_speed as u64));
                 }
             }
         }
@@ -283,11 +283,11 @@ fn main() {
                 if *is_up_right_fast.lock().unwrap().borrow().clone() {
                     //move up right with fast speed
                     MouseCursor::move_abs(1, -1);
-                    sleep(Duration::from_millis(move_frequency / fast_speed as u64));
+                    sleep(Duration::from_micros(fast_speed as u64));
                 } else {
                     //move up right with slow speed
                     MouseCursor::move_abs(1, -1);
-                    sleep(Duration::from_millis(move_frequency / slow_speed as u64));
+                    sleep(Duration::from_micros(slow_speed as u64));
                 }
             }
         }
@@ -301,11 +301,11 @@ fn main() {
                 if *is_down_right_fast.lock().unwrap().borrow().clone() {
                     //move down right with fast speed
                     MouseCursor::move_abs(1, 1);
-                    sleep(Duration::from_millis(move_frequency / fast_speed as u64));
+                    sleep(Duration::from_micros(fast_speed as u64));
                 } else {
                     //move down right with slow speed
                     MouseCursor::move_abs(1, 1);
-                    sleep(Duration::from_millis(move_frequency / slow_speed as u64));
+                    sleep(Duration::from_micros(slow_speed as u64));
                 }
             }
         }
@@ -319,11 +319,11 @@ fn main() {
                 if *is_down_left_fast.lock().unwrap().borrow().clone() {
                     //move down left with fast speed
                     MouseCursor::move_abs(-1, 1);
-                    sleep(Duration::from_millis(move_frequency / fast_speed as u64));
+                    sleep(Duration::from_micros(fast_speed as u64));
                 } else {
                     //move down left with slow speed
                     MouseCursor::move_abs(-1, 1);
-                    sleep(Duration::from_millis(move_frequency / slow_speed as u64));
+                    sleep(Duration::from_micros(slow_speed as u64));
                 }
             }
         }
@@ -350,7 +350,7 @@ fn main() {
             is_fast.to_owned().lock().unwrap().replace(Box::new(true));
             // fast is not modal for ergonomics.
             while MouseKeyFast.is_pressed() {
-                sleep(Duration::from_millis(move_frequency));
+                sleep(Duration::from_micros(move_frequency));
                 continue;
             }
             is_fast.to_owned().lock().unwrap().replace(Box::new(false));
@@ -375,11 +375,11 @@ fn main() {
             let cur_value = *left_click_active.lock().unwrap().borrow().clone();
             if cur_value.clone() {
                 MouseButton::LeftButton.press();
-                sleep(Duration::from_millis(10));
+                sleep(Duration::from_micros(10));
                 MouseButton::LeftButton.release();
             } else {
                 MouseButton::RightButton.press();
-                sleep(Duration::from_millis(10));
+                sleep(Duration::from_micros(10));
                 MouseButton::RightButton.release();
             }
         }
