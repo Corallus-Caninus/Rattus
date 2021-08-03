@@ -35,7 +35,7 @@ TODO:
 2. create Rattus.service or other integration
 3. add more modes: 
    
-   -click and hold mode *done
+   -middle click
    
    -record macro for repeating movements and clicks (also typing?) "Robot Mode"
       press enter on numpad then any of the numbers for a pre recorded operation at cursor position
