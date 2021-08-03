@@ -32,7 +32,6 @@ fn main() {
         .collect::<Vec<i32>>();
     let fast_speed = args.pop().unwrap();
     let slow_speed = args.pop().unwrap();
-    let move_frequency = args.pop().unwrap() as u64;
 
     //the history buffer of mouse clicks and current location
     // let mut history = vec![];
@@ -350,7 +349,7 @@ fn main() {
             is_fast.to_owned().lock().unwrap().replace(Box::new(true));
             // fast is not modal for ergonomics.
             while MouseKeyFast.is_pressed() {
-                sleep(Duration::from_micros(move_frequency));
+                sleep(Duration::from_micros(slow_speed as u64));
                 continue;
             }
             is_fast.to_owned().lock().unwrap().replace(Box::new(false));
