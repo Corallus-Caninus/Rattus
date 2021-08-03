@@ -60,4 +60,4 @@ TODO:
 Currently tested with command:
 cargo build --release; sudo target/release/Rattus 5000 500
 
-where number arguments are: fast speed and slow speed
+where number arguments are: slow speed and fast speed in terms of delay (smaller number is faster)
