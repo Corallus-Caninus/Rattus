@@ -27,13 +27,14 @@ A modal Mouse Key meant to entirely replace the mouse Currently tested on Linux 
 
 ./Del: toggle right or left click
 
++: toggle hold for left or right
+
 Rattus is under active development.
 
 TODO: 
 
-1. block numpad keycodes; currently this types into selection *done
-2. create Rattus.service or other integration
-3. add more modes: 
+1. create Rattus.service or other integration
+2. add more modes (the keys are currently only for example and do not reflect what will be done in actuality): 
    
    -middle click
    
