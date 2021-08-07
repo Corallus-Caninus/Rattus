@@ -45,6 +45,7 @@ fn main() {
     let left_click_hold = left_click_active.clone();
 
     //create is_fast for up down left right and all diagonals
+    //TODO: NKRO locks this on mutex: if two buttons are pressed at the same time then is_fast is toggled
     let is_fast = Arc::new(Mutex::new(RefCell::new(Box::new(false))));
     let is_up_fast = is_fast.clone();
     let is_down_fast = is_fast.clone();
@@ -94,92 +95,143 @@ fn main() {
     //TODO:Num_Lock can't keep up so we need to write our own toggle using fast rust code and then pass through the
     //     num pad arrow keys and numbers respectively
     //     start by removing kp instructions here
+    let mut awaits = vec![];
     //KP_Home
-    std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 79 = 300"#])
-        .output()
-        .unwrap();
+    awaits.push(
+        std::process::Command::new("xmodmap")
+            .args(&["-e", r#"keycode 79 = 300"#])
+            .spawn(), //.output(),
+    );
+    //.unwrap();
     //KP_Up
-    std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 80 = 301"#])
-        .output()
-        .unwrap();
+    awaits.push(
+        std::process::Command::new("xmodmap")
+            .args(&["-e", r#"keycode 80 = 301"#])
+            .spawn(),
+    );
+    //.output()
+    //.unwrap();
     //KP_Prior
-    std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 81 = 302"#])
-        .output()
-        .unwrap();
+    awaits.push(
+        std::process::Command::new("xmodmap")
+            .args(&["-e", r#"keycode 81 = 302"#])
+            .spawn(),
+    );
+    //.output()
+    //.unwrap();
     //KP_Subtract
-    std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 82 = 303"#])
-        .output()
-        .unwrap();
+    awaits.push(
+        std::process::Command::new("xmodmap")
+            .args(&["-e", r#"keycode 82 = 303"#])
+            .spawn(),
+    );
+    //.output()
+    //.unwrap();
     //KP_Left
-    std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 83 = 304"#])
-        .output()
-        .unwrap();
+    awaits.push(
+        std::process::Command::new("xmodmap")
+            .args(&["-e", r#"keycode 83 = 304"#])
+            .spawn(),
+    );
+    //.output()
+    //.unwrap();
     //KP_Begin
-    std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 84 = 305"#])
-        .output()
-        .unwrap();
+    awaits.push(
+        std::process::Command::new("xmodmap")
+            .args(&["-e", r#"keycode 84 = 305"#])
+            .spawn(),
+    );
+    //.output()
+    //.unwrap();
     //KP_Right
-    std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 85 = 306"#])
-        .output()
-        .unwrap();
+    awaits.push(
+        std::process::Command::new("xmodmap")
+            .args(&["-e", r#"keycode 85 = 306"#])
+            .spawn(),
+    );
+    //.output()
+    //.unwrap();
     //KP_Add
-    std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 86 = 307"#])
-        .output()
-        .unwrap();
+    awaits.push(
+        std::process::Command::new("xmodmap")
+            .args(&["-e", r#"keycode 86 = 307"#])
+            .spawn(),
+    );
+    //.output()
+    //.unwrap();
     //KP_End
-    std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 87 = 308"#])
-        .output()
-        .unwrap();
+    awaits.push(
+        std::process::Command::new("xmodmap")
+            .args(&["-e", r#"keycode 87 = 308"#])
+            .spawn(),
+    );
+    //.output()
+    //.unwrap();
     //KP_Down
-    std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 88 = 309"#])
-        .output()
-        .unwrap();
+    awaits.push(
+        std::process::Command::new("xmodmap")
+            .args(&["-e", r#"keycode 88 = 309"#])
+            .spawn(),
+    );
+    //.output()
+    //.unwrap();
     //KP_Next
-    std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 89 = 310"#])
-        .output()
-        .unwrap();
+    awaits.push(
+        std::process::Command::new("xmodmap")
+            .args(&["-e", r#"keycode 89 = 310"#])
+            .spawn(),
+    );
+    //.output()
+    //.unwrap();
     //KP_Insert
-    std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 90 = 311"#])
-        .output()
-        .unwrap();
+    awaits.push(
+        std::process::Command::new("xmodmap")
+            .args(&["-e", r#"keycode 90 = 311"#])
+            .spawn(),
+    );
+    //.output()
+    //.unwrap();
     //KP_Delete
-    std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 91 = 312 312"#])
-        .output()
-        .unwrap();
+    awaits.push(
+        std::process::Command::new("xmodmap")
+            .args(&["-e", r#"keycode 91 = 312 312"#])
+            .spawn(),
+    );
+    //.output()
+    //.unwrap();
     //TODO: Enter key
-    std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 104 = 313 313"#])
-        .output()
-        .unwrap();
+    awaits.push(
+        std::process::Command::new("xmodmap")
+            .args(&["-e", r#"keycode 104 = 313 313"#])
+            .spawn(),
+    );
+    //.output()
+    //.unwrap();
     //asterisk
-    std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 63 = 314 314"#])
-        .output()
-        .unwrap();
+    awaits.push(
+        std::process::Command::new("xmodmap")
+            .args(&["-e", r#"keycode 63 = 314 314"#])
+            .spawn(),
+    );
+    //.output()
+    //.unwrap();
     //forward slash
-    std::process::Command::new("xmodmap")
-        .args(&["-e", r#"keycode 106 = 315 315"#])
-        .output()
-        .unwrap();
+    awaits.push(
+        std::process::Command::new("xmodmap")
+            .args(&["-e", r#"keycode 106 = 315 315"#])
+            .spawn(),
+    );
+    //.output()
+    //.unwrap();
     //also remap numlock since NKRO numpads dont arrive in order at usb
     //hub causing entries to not have numlock signal prepended
     // std::process::Command::new("xmodmap")
     //     .args(&["-e", r#"keycode 77=Num_Lock NoSymbol Num_Lock"#])
     //     .output()
     //     .unwrap();
+    awaits.into_iter().for_each(|x| {
+        x.unwrap();
+    });
 
     //NOTE: these should have been in a macro dont blame rust for my bad code
     //Numpad8Key.bind(|| {
@@ -345,7 +397,6 @@ fn main() {
         //if NumLockKey.is_toggled() {
         if *is_numlock_on_fast.lock().unwrap().borrow().clone() {
             //set fast speed
-            let cur_value = **is_fast.clone().lock().unwrap().borrow();
             is_fast.to_owned().lock().unwrap().replace(Box::new(true));
             // fast is not modal for ergonomics.
             while MouseKeyFast.is_pressed() {
