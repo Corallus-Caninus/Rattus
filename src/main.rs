@@ -45,7 +45,7 @@ fn main() {
     let left_click_hold = left_click_active.clone();
 
     //create is_fast for up down left right and all diagonals
-    //TODO: NKRO locks this on mutex: if two buttons are pressed at the same time then is_fast is toggled
+    //TODO: NKRO locks this on mutex: if two or more buttons are pressed at the same time as is_fast is toggled
     let is_fast = Arc::new(Mutex::new(RefCell::new(Box::new(false))));
     let is_up_fast = is_fast.clone();
     let is_down_fast = is_fast.clone();
@@ -92,9 +92,9 @@ fn main() {
     // we are counting from three hundred since these values are unused in the scan codes (think virtual sockets)
 
     //TODO: restore default on close if no better solution found (not a priority)
-    //TODO:Num_Lock can't keep up so we need to write our own toggle using fast rust code and then pass through the
-    //     num pad arrow keys and numbers respectively
-    //     start by removing kp instructions here
+    //  Num_Lock can't keep up so we need to write our own toggle using fast rust code and then pass through the
+    //  num pad arrow keys and numbers respectively
+    //  start by removing kp instructions here
     let mut awaits = vec![];
     //KP_Home
     awaits.push(
@@ -102,131 +102,104 @@ fn main() {
             .args(&["-e", r#"keycode 79 = 300"#])
             .spawn(), //.output(),
     );
-    //.unwrap();
     //KP_Up
     awaits.push(
         std::process::Command::new("xmodmap")
             .args(&["-e", r#"keycode 80 = 301"#])
             .spawn(),
     );
-    //.output()
-    //.unwrap();
     //KP_Prior
     awaits.push(
         std::process::Command::new("xmodmap")
             .args(&["-e", r#"keycode 81 = 302"#])
             .spawn(),
     );
-    //.output()
-    //.unwrap();
     //KP_Subtract
     awaits.push(
         std::process::Command::new("xmodmap")
             .args(&["-e", r#"keycode 82 = 303"#])
             .spawn(),
     );
-    //.output()
-    //.unwrap();
     //KP_Left
     awaits.push(
         std::process::Command::new("xmodmap")
             .args(&["-e", r#"keycode 83 = 304"#])
             .spawn(),
     );
-    //.output()
-    //.unwrap();
     //KP_Begin
     awaits.push(
         std::process::Command::new("xmodmap")
             .args(&["-e", r#"keycode 84 = 305"#])
             .spawn(),
     );
-    //.output()
-    //.unwrap();
     //KP_Right
     awaits.push(
         std::process::Command::new("xmodmap")
             .args(&["-e", r#"keycode 85 = 306"#])
             .spawn(),
     );
-    //.output()
-    //.unwrap();
     //KP_Add
     awaits.push(
         std::process::Command::new("xmodmap")
             .args(&["-e", r#"keycode 86 = 307"#])
             .spawn(),
     );
-    //.output()
-    //.unwrap();
     //KP_End
     awaits.push(
         std::process::Command::new("xmodmap")
             .args(&["-e", r#"keycode 87 = 308"#])
             .spawn(),
     );
-    //.output()
-    //.unwrap();
     //KP_Down
     awaits.push(
         std::process::Command::new("xmodmap")
             .args(&["-e", r#"keycode 88 = 309"#])
             .spawn(),
     );
-    //.output()
-    //.unwrap();
     //KP_Next
     awaits.push(
         std::process::Command::new("xmodmap")
             .args(&["-e", r#"keycode 89 = 310"#])
             .spawn(),
     );
-    //.output()
-    //.unwrap();
     //KP_Insert
     awaits.push(
         std::process::Command::new("xmodmap")
             .args(&["-e", r#"keycode 90 = 311"#])
             .spawn(),
     );
-    //.output()
-    //.unwrap();
     //KP_Delete
     awaits.push(
         std::process::Command::new("xmodmap")
             .args(&["-e", r#"keycode 91 = 312 312"#])
             .spawn(),
     );
-    //.output()
-    //.unwrap();
     //TODO: Enter key
     awaits.push(
         std::process::Command::new("xmodmap")
             .args(&["-e", r#"keycode 104 = 313 313"#])
             .spawn(),
     );
-    //.output()
-    //.unwrap();
     //asterisk
     awaits.push(
         std::process::Command::new("xmodmap")
             .args(&["-e", r#"keycode 63 = 314 314"#])
             .spawn(),
     );
-    //.output()
-    //.unwrap();
     //forward slash
     awaits.push(
         std::process::Command::new("xmodmap")
             .args(&["-e", r#"keycode 106 = 315 315"#])
             .spawn(),
     );
-    //.output()
-    //.unwrap();
+    //TODO: not implemented
     //also remap numlock since NKRO numpads dont arrive in order at usb
     //hub causing entries to not have numlock signal prepended
-    // std::process::Command::new("xmodmap")
-    //     .args(&["-e", r#"keycode 77=Num_Lock NoSymbol Num_Lock"#])
+    awaits.push(
+        std::process::Command::new("xmodmap")
+            .args(&["-e", r#"keycode 77=316 316"#])
+            .spawn(),
+    );
     //     .output()
     //     .unwrap();
     awaits.into_iter().for_each(|x| {
@@ -236,7 +209,6 @@ fn main() {
     //NOTE: these should have been in a macro dont blame rust for my bad code
     //Numpad8Key.bind(|| {
     MouseKeyUp.bind(move || {
-        //if NumLockKey.is_toggled() {
         if *is_numlock_on_up.lock().unwrap().borrow().clone() {
             while MouseKeyUp.is_pressed() {
                 //move up with fast or slow speed
@@ -250,8 +222,8 @@ fn main() {
                     sleep(Duration::from_micros(slow_speed as u64));
                 }
             }
-            //TODO: else Numpad8Key.press();
         }
+        //TODO: else .press(); arrow key or digit
     });
     //Numpad2Key.bind(|| {
     MouseKeyDown.bind(move || {
@@ -272,7 +244,6 @@ fn main() {
     });
     //Numpad4Key.bind(|| {
     MouseKeyLeft.bind(move || {
-        //if NumLockKey.is_toggled() {
         if *is_numlock_on_left.lock().unwrap().borrow().clone() {
             while MouseKeyLeft.is_pressed() {
                 //move left with fast or slow speed
@@ -290,7 +261,6 @@ fn main() {
     });
     //Numpad6Key.bind(|| {
     MouseKeyRight.bind(move || {
-        //if NumLockKey.is_toggled() {
         if *is_numlock_on_right.lock().unwrap().borrow().clone() {
             while MouseKeyRight.is_pressed() {
                 //move right with fast or slow speed
@@ -309,7 +279,6 @@ fn main() {
 
     //Numpad7Key.bind(|| {
     MouseKeyUpperLeft.bind(move || {
-        //if NumLockKey.is_toggled() {
         if *is_numlock_on_up_left.lock().unwrap().borrow().clone() {
             while MouseKeyUpperLeft.is_pressed() {
                 //move up left with fast or slow speed
@@ -327,7 +296,6 @@ fn main() {
     });
     //Numpad9Key.bind(|| {
     MouseKeyUpperRight.bind(move || {
-        //if NumLockKey.is_toggled() {
         if *is_numlock_on_up_right.lock().unwrap().borrow().clone() {
             while MouseKeyUpperRight.is_pressed() {
                 //move up right with fast or slow speed
@@ -345,7 +313,6 @@ fn main() {
     });
     //Numpad3Key.bind(|| {
     MouseKeyLowerRight.bind(move || {
-        //if NumLockKey.is_toggled() {
         if *is_numlock_on_down_right.lock().unwrap().borrow().clone() {
             while MouseKeyLowerRight.is_pressed() {
                 //move down right with fast or slow speed
@@ -363,7 +330,6 @@ fn main() {
     });
     //Numpad1Key.bind(|| {
     MouseKeyLowerLeft.bind(move || {
-        //if NumLockKey.is_toggled() {
         if *is_numlock_on_down_left.lock().unwrap().borrow().clone() {
             while MouseKeyLowerLeft.is_pressed() {
                 //move down left with fast or slow speed
@@ -381,7 +347,6 @@ fn main() {
     });
 
     MouseKeyClickToggle.bind(move || {
-        //if NumLockKey.is_toggled() {
         if *is_numlock_on_click_toggle.lock().unwrap().borrow().clone() {
             //toggle whether left click is counted for num pad five
             let cur_value = **left_click_toggle.to_owned().lock().unwrap().borrow();
@@ -394,7 +359,6 @@ fn main() {
     });
     //Numpad1Key.bind(|| {
     MouseKeyFast.bind(move || {
-        //if NumLockKey.is_toggled() {
         if *is_numlock_on_fast.lock().unwrap().borrow().clone() {
             //set fast speed
             is_fast.to_owned().lock().unwrap().replace(Box::new(true));
@@ -419,7 +383,6 @@ fn main() {
 
     //Numpad5Key.bind(|| {
     MouseKeyMiddle.bind(move || {
-        //if NumLockKey.is_toggled() {
         if *is_numlock_on_middle.lock().unwrap().borrow().clone() {
             //toggle left click
             let cur_value = *left_click_active.lock().unwrap().borrow().clone();
@@ -436,7 +399,6 @@ fn main() {
     });
     //TODO: ensure this is moved to new signal
     NumpadPlusKey.bind(move || {
-        //if NumLockKey.is_toggled() {
         if **is_numlock_on_plus.lock().unwrap().borrow() {
             //hold left click, released by another 5 left click
             if *left_click_hold.lock().unwrap().borrow().clone() {
