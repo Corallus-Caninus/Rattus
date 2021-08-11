@@ -200,8 +200,6 @@ fn main() {
             .args(&["-e", r#"keycode 77=316 316"#])
             .spawn(),
     );
-    //     .output()
-    //     .unwrap();
     awaits.into_iter().for_each(|x| {
         x.unwrap();
     });
@@ -346,15 +344,20 @@ fn main() {
         }
     });
 
-    MouseKeyClickToggle.bind(move || {
+    //TODO: fix this naming in input keycode
+    NumpadPlusKey.bind(move || {
         if *is_numlock_on_click_toggle.lock().unwrap().borrow().clone() {
+            MouseButton::RightButton.press();
+            sleep(Duration::from_micros(10));
+            MouseButton::RightButton.release();
+            //@DEPRECATED
             //toggle whether left click is counted for num pad five
-            let cur_value = **left_click_toggle.to_owned().lock().unwrap().borrow();
-            left_click_toggle
-                .to_owned()
-                .lock()
-                .unwrap()
-                .replace(Box::new(!cur_value));
+            //let cur_value = **left_click_toggle.to_owned().lock().unwrap().borrow();
+            // left_click_toggle
+            //     .to_owned()
+            //     .lock()
+            //     .unwrap()
+            //     .replace(Box::new(!cur_value));
         }
     });
     //Numpad1Key.bind(|| {
@@ -385,20 +388,20 @@ fn main() {
     MouseKeyMiddle.bind(move || {
         if *is_numlock_on_middle.lock().unwrap().borrow().clone() {
             //toggle left click
-            let cur_value = *left_click_active.lock().unwrap().borrow().clone();
-            if cur_value.clone() {
-                MouseButton::LeftButton.press();
-                sleep(Duration::from_micros(10));
-                MouseButton::LeftButton.release();
-            } else {
-                MouseButton::RightButton.press();
-                sleep(Duration::from_micros(10));
-                MouseButton::RightButton.release();
-            }
+            //let cur_value = *left_click_active.lock().unwrap().borrow().clone();
+            //if cur_value.clone() {
+            MouseButton::LeftButton.press();
+            sleep(Duration::from_micros(10));
+            MouseButton::LeftButton.release();
+            //} else {
+            //    MouseButton::RightButton.press();
+            //    sleep(Duration::from_micros(10));
+            //    MouseButton::RightButton.release();
+            //}
         }
     });
-    //TODO: ensure this is moved to new signal
-    NumpadPlusKey.bind(move || {
+    //TODO: change these names in input
+    MouseKeyClickToggle.bind(move || {
         if **is_numlock_on_plus.lock().unwrap().borrow() {
             //hold left click, released by another 5 left click
             if *left_click_hold.lock().unwrap().borrow().clone() {
