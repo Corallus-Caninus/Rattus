@@ -3,7 +3,7 @@ A modal Mouse Key meant to entirely replace the mouse Currently tested on Linux 
 
 *Keys:*
 
-5: click
+5: left click
 
 7: up-left
 
@@ -25,9 +25,9 @@ A modal Mouse Key meant to entirely replace the mouse Currently tested on Linux 
 
 0/Insert: hold for fast movement
 
-./Del: toggle right or left click
+./Del: toggle hold on right or left click (click to toggle out)
 
-+: toggle hold for left or right
++: right click
 
 Rattus is under active development.
 
