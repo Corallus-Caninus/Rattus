@@ -352,8 +352,6 @@ fn main() {
             sleep(Duration::from_micros(10));
             MouseButton::RightButton.release();
 
-            //toggle whether left click is counted for num pad five
-            let cur_value = **right_click_toggle.to_owned().lock().unwrap().borrow();
             right_click_toggle
                 .to_owned()
                 .lock()
