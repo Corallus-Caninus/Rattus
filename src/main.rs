@@ -89,116 +89,44 @@ fn main() {
     let left_click_toggle = Arc::new(Mutex::new(RefCell::new(Box::new(true))));
 
     //create is_fast for up down left right and all diagonals
-    //TODO: NKRO locks this on mutex: if two or more buttons are pressed at the same time as is_fast is toggled
+    //TODO: NKRO locks this on mutex: if two or more buttons are pressed at the same time as is_fast is toggled.
+    //      not a big deal.
     let is_fast = Arc::new(Mutex::new(RefCell::new(Box::new(false))));
 
     // TODO: force this to sync with numlock on initialization
     let is_numlock_on = Arc::new(Mutex::new(RefCell::new(Box::new(true))));
 
-    // would prefer to use the x .so but couldnt find in the SDK
-    //      consider xmodmap -e "remove <key> <key>" to remap keys to unused keys
-    // we are going to disable 79-89 keys to prevent typing to entry while MouseKeying
-    //these are the current keymappings we will be changing by removing the KP_NUMBER entries
-    // keycode  79 = KP_Home KP_7 KP_Home KP_7
-    // keycode  80 = KP_Up KP_8 KP_Up KP_8
-    // keycode  81 = KP_Prior KP_9 KP_Prior KP_9
-    // keycode  82 = KP_Subtract KP_Subtract KP_Subtract KP_Subtract KP_Subtract KP_Subtract XF86Prev_VMode KP_Subtract KP_Subtract XF86Prev_VMode
-    // keycode  83 = KP_Left KP_4 KP_Left KP_4
-    // keycode  84 = KP_Begin KP_5 KP_Begin KP_5
-    // keycode  85 = KP_Right KP_6 KP_Right KP_6
-    // keycode  86 = KP_Add KP_Add KP_Add KP_Add KP_Add KP_Add XF86Next_VMode KP_Add KP_Add XF86Next_VMode
-    // keycode  87 = KP_End KP_1 KP_End KP_1
-    // keycode  88 = KP_Down KP_2 KP_Down KP_2
-    // keycode  89 = KP_Next KP_3 KP_Next KP_3
-    // keycode  90 = KP_Insert KP_0 KP_Insert KP_0
-    // keycode  91 = KP_Delete KP_Decimal KP_Delete KP_Decimal
-    // we are counting from three hundred since these values are unused in the scan codes (think virtual sockets)
-
-    //TODO: restore default on close if no better solution found (not a priority)
-    //  Num_Lock can't keep up so we need to write our own toggle using fast rust code and then pass through the
-    //  num pad arrow keys and numbers respectively
-    //  start by removing kp instructions here
+    //  Num_Lock can't keep up so we need to write our own stateful modes using different toggle keys
     let mut awaits = vec![];
-    //TODO: this should be a for loop
+
     //KP_Home
-    awaits.push(
-        std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 79 = 900"#])
-            .spawn(), //.output(),
-    );
     //KP_Up
-    awaits.push(
-        std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 80 = 901"#])
-            .spawn(),
-    );
     //KP_Prior
-    awaits.push(
-        std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 81 = 902"#])
-            .spawn(),
-    );
     //KP_Subtract
-    awaits.push(
-        std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 82 = 903"#])
-            .spawn(),
-    );
     //KP_Left
-    awaits.push(
-        std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 83 = 904"#])
-            .spawn(),
-    );
     //KP_Begin
-    awaits.push(
-        std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 84 = 905"#])
-            .spawn(),
-    );
     //KP_Right
-    awaits.push(
-        std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 85 = 906"#])
-            .spawn(),
-    );
     //KP_Add
-    awaits.push(
-        std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 86 = 907"#])
-            .spawn(),
-    );
     //KP_End
-    awaits.push(
-        std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 87 = 908"#])
-            .spawn(),
-    );
     //KP_Down
-    awaits.push(
-        std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 88 = 909"#])
-            .spawn(),
-    );
     //KP_Next
-    awaits.push(
-        std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 89 = 910"#])
-            .spawn(),
-    );
     //KP_Insert
-    awaits.push(
-        std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 90 = 911"#])
-            .spawn(),
-    );
     //KP_Delete
-    awaits.push(
-        std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 91 = 912 912"#])
-            .spawn(),
-    );
-    //TODO: Enter key
+    for i in 0..12 {
+        let command_str = format!(
+            "keycode {} =
+        {}",
+            i + 79,
+            i + 900
+        );
+        awaits.push(
+            std::process::Command::new("xmodmap")
+                .args(&["-e", command_str.as_str()])
+                .spawn(), //.output(),
+        );
+    }
+    //TODO: implement Enter key as slow mode with fast mode mixing
+    //TODO this may be marginal with above loop check during implementation
     awaits.push(
         std::process::Command::new("xmodmap")
             .args(&["-e", r#"keycode 104 = 913 913"#])
@@ -311,7 +239,6 @@ fn main() {
         -1,
         1,
     );
-
 
     //TODO: fix this naming in input keycode
     NumpadPlusKey.bind(
