@@ -25,6 +25,50 @@ struct Mouse_Action {
     is_clicked: bool,
 }
 
+trait MoveRat {
+    fn move_rat(
+        self,
+        is_numlock_on: Arc<Mutex<RefCell<Box<bool>>>>,
+        is_fast: Arc<Mutex<RefCell<Box<bool>>>>,
+        fast_speed: u64,
+        slow_speed: u64,
+        mode_keypad: KeybdKey,
+        mode_arrow: KeybdKey,
+        x: i32,
+        y: i32,
+    );
+}
+impl MoveRat for KeybdKey {
+    fn move_rat(
+        self,
+        is_numlock_on: Arc<Mutex<RefCell<Box<bool>>>>,
+        is_fast: Arc<Mutex<RefCell<Box<bool>>>>,
+        fast_speed: u64,
+        slow_speed: u64,
+        mode_keypad: KeybdKey,
+        mode_arrow: KeybdKey,
+        x: i32,
+        y: i32,
+    ) {
+        self.bind(enclose!((is_numlock_on, is_fast) move || {
+            if *is_numlock_on.lock().unwrap().borrow().clone() {
+                while self.is_pressed() {
+                    //move up with fast or slow speed
+                    if *is_fast.lock().unwrap().borrow().clone() {
+                        //move up with fast speed
+                        MouseCursor::move_abs(x, y);
+                        sleep(Duration::from_micros(fast_speed as u64));
+                    } else {
+                        //move up with slow speed
+                        MouseCursor::move_abs(x, y);
+                        sleep(Duration::from_micros(slow_speed as u64));
+                    }
+                }
+            }
+            //TODO: else .press(); arrow key or digit
+        }));
+    }
+}
 fn main() {
     let args = env::args().skip(1).collect::<Vec<String>>();
     let mut args = args
@@ -33,6 +77,7 @@ fn main() {
         .collect::<Vec<i32>>();
     let fast_speed = args.pop().unwrap();
     let slow_speed = args.pop().unwrap();
+    let click_speed = args.pop().unwrap();
 
     //the history buffer of mouse clicks and current location
     // let mut history = vec![];
@@ -74,100 +119,101 @@ fn main() {
     //  num pad arrow keys and numbers respectively
     //  start by removing kp instructions here
     let mut awaits = vec![];
+    //TODO: this should be a for loop
     //KP_Home
     awaits.push(
         std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 79 = 300"#])
+            .args(&["-e", r#"keycode 79 = 900"#])
             .spawn(), //.output(),
     );
     //KP_Up
     awaits.push(
         std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 80 = 301"#])
+            .args(&["-e", r#"keycode 80 = 901"#])
             .spawn(),
     );
     //KP_Prior
     awaits.push(
         std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 81 = 302"#])
+            .args(&["-e", r#"keycode 81 = 902"#])
             .spawn(),
     );
     //KP_Subtract
     awaits.push(
         std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 82 = 303"#])
+            .args(&["-e", r#"keycode 82 = 903"#])
             .spawn(),
     );
     //KP_Left
     awaits.push(
         std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 83 = 304"#])
+            .args(&["-e", r#"keycode 83 = 904"#])
             .spawn(),
     );
     //KP_Begin
     awaits.push(
         std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 84 = 305"#])
+            .args(&["-e", r#"keycode 84 = 905"#])
             .spawn(),
     );
     //KP_Right
     awaits.push(
         std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 85 = 306"#])
+            .args(&["-e", r#"keycode 85 = 906"#])
             .spawn(),
     );
     //KP_Add
     awaits.push(
         std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 86 = 307"#])
+            .args(&["-e", r#"keycode 86 = 907"#])
             .spawn(),
     );
     //KP_End
     awaits.push(
         std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 87 = 308"#])
+            .args(&["-e", r#"keycode 87 = 908"#])
             .spawn(),
     );
     //KP_Down
     awaits.push(
         std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 88 = 309"#])
+            .args(&["-e", r#"keycode 88 = 909"#])
             .spawn(),
     );
     //KP_Next
     awaits.push(
         std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 89 = 310"#])
+            .args(&["-e", r#"keycode 89 = 910"#])
             .spawn(),
     );
     //KP_Insert
     awaits.push(
         std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 90 = 311"#])
+            .args(&["-e", r#"keycode 90 = 911"#])
             .spawn(),
     );
     //KP_Delete
     awaits.push(
         std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 91 = 312 312"#])
+            .args(&["-e", r#"keycode 91 = 912 912"#])
             .spawn(),
     );
     //TODO: Enter key
     awaits.push(
         std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 104 = 313 313"#])
+            .args(&["-e", r#"keycode 104 = 913 913"#])
             .spawn(),
     );
     //asterisk
     awaits.push(
         std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 63 = 314 314"#])
+            .args(&["-e", r#"keycode 63 = 914 914"#])
             .spawn(),
     );
     //forward slash
     awaits.push(
         std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 106 = 315 315"#])
+            .args(&["-e", r#"keycode 106 = 915 915"#])
             .spawn(),
     );
     //TODO: not implemented
@@ -175,175 +221,104 @@ fn main() {
     //hub causing entries to not have numlock signal prepended
     awaits.push(
         std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 77=316 316"#])
+            .args(&["-e", r#"keycode 77=916 916"#])
             .spawn(),
     );
     awaits.into_iter().for_each(|x| {
         x.unwrap();
     });
 
-    //NOTE: these should have been in a macro dont blame rust for my bad code
-    //Numpad8Key.bind(|| {
-    MouseKeyUp.bind(
-        enclose!((is_numlock_on => is_numlock_on_up, is_fast=>is_up_fast) move || {
-            if *is_numlock_on_up.lock().unwrap().borrow().clone() {
-                while MouseKeyUp.is_pressed() {
-                    //move up with fast or slow speed
-                    if *is_up_fast.lock().unwrap().borrow().clone() {
-                        //move up with fast speed
-                        MouseCursor::move_abs(0, -1);
-                        sleep(Duration::from_micros(fast_speed as u64));
-                    } else {
-                        //move up with slow speed
-                        MouseCursor::move_abs(0, -1);
-                        sleep(Duration::from_micros(slow_speed as u64));
-                    }
-                }
-            }
-            //TODO: else .press(); arrow key or digit
-        }),
+    MouseKeyUp.move_rat(
+        // cloning here is weird but doesnt really matter since this is config
+        // and i'll take what I can get from the borrow checker
+        is_numlock_on.clone(),
+        is_fast.clone(),
+        fast_speed as u64,
+        slow_speed as u64,
+        Numpad8Key,
+        UpKey,
+        0,
+        -1,
     );
-    //Numpad2Key.bind(|| {
-    MouseKeyDown.bind(
-        enclose!((is_numlock_on=>is_numlock_on_down,is_fast=>is_down_fast)move || {
-            if *is_numlock_on_down.lock().unwrap().borrow().clone() {
-                while MouseKeyDown.is_pressed() {
-                    //move down with fast or slow speed
-                    if *is_down_fast.lock().unwrap().borrow().clone() {
-                        //move down with fast speed
-                        MouseCursor::move_abs(0, 1);
-                        sleep(Duration::from_micros(fast_speed as u64));
-                    } else {
-                        //move down with slow speed
-                        MouseCursor::move_abs(0, 1);
-                        sleep(Duration::from_micros(slow_speed as u64));
-                    }
-                }
-            }
-        }),
+    MouseKeyDown.move_rat(
+        is_numlock_on.clone(),
+        is_fast.clone(),
+        fast_speed as u64,
+        slow_speed as u64,
+        Numpad2Key,
+        DownKey,
+        0,
+        1,
     );
-    //Numpad4Key.bind(|| {
-    MouseKeyLeft.bind(
-        enclose!((is_numlock_on=>is_numlock_on_left,is_fast=>is_left_fast) move || {
-            if *is_numlock_on_left.lock().unwrap().borrow().clone() {
-                while MouseKeyLeft.is_pressed() {
-                    //move left with fast or slow speed
-                    if *is_left_fast.lock().unwrap().borrow().clone() {
-                        //move left with fast speed
-                        MouseCursor::move_abs(-1, 0);
-                        sleep(Duration::from_micros(fast_speed as u64));
-                    } else {
-                        //move left with slow speed
-                        MouseCursor::move_abs(-1, 0);
-                        sleep(Duration::from_micros(slow_speed as u64));
-                    }
-                }
-            }
-        }),
+    MouseKeyLeft.move_rat(
+        is_numlock_on.clone(),
+        is_fast.clone(),
+        fast_speed as u64,
+        slow_speed as u64,
+        Numpad4Key,
+        LeftKey,
+        -1,
+        0,
     );
-    //Numpad6Key.bind(|| {
-    MouseKeyRight.bind(
-        enclose!((is_numlock_on=>is_numlock_on_right,is_fast=>is_right_fast) move || {
-            if *is_numlock_on_right.lock().unwrap().borrow().clone() {
-                while MouseKeyRight.is_pressed() {
-                    //move right with fast or slow speed
-                    if *is_right_fast.lock().unwrap().borrow().clone() {
-                        //move right with fast speed
-                        MouseCursor::move_abs(1, 0);
-                        sleep(Duration::from_micros(fast_speed as u64));
-                    } else {
-                        //move right with slow speed
-                        MouseCursor::move_abs(1, 0);
-                        sleep(Duration::from_micros(slow_speed as u64));
-                    }
-                }
-            }
-        }),
+    MouseKeyRight.move_rat(
+        is_numlock_on.clone(),
+        is_fast.clone(),
+        fast_speed as u64,
+        slow_speed as u64,
+        Numpad6Key,
+        RightKey,
+        1,
+        0,
+    );
+    MouseKeyUpperLeft.move_rat(
+        is_numlock_on.clone(),
+        is_fast.clone(),
+        fast_speed as u64,
+        slow_speed as u64,
+        Numpad7Key,
+        //TODO: this should be up and left at the same time
+        UpKey,
+        -1,
+        -1,
+    );
+    MouseKeyUpperRight.move_rat(
+        is_numlock_on.clone(),
+        is_fast.clone(),
+        fast_speed as u64,
+        slow_speed as u64,
+        Numpad9Key,
+        UpKey,
+        1,
+        -1,
+    );
+    MouseKeyLowerRight.move_rat(
+        is_numlock_on.clone(),
+        is_fast.clone(),
+        fast_speed as u64,
+        slow_speed as u64,
+        Numpad3Key,
+        DownKey,
+        1,
+        1,
+    );
+    MouseKeyLowerLeft.move_rat(
+        is_numlock_on.clone(),
+        is_fast.clone(),
+        fast_speed as u64,
+        slow_speed as u64,
+        Numpad1Key,
+        DownKey,
+        -1,
+        1,
     );
 
-    //Numpad7Key.bind(|| {
-    MouseKeyUpperLeft.bind(
-        enclose!((is_numlock_on=>is_numlock_on_up_left,is_fast=>is_up_left_fast) move || {
-            if *is_numlock_on_up_left.lock().unwrap().borrow().clone() {
-                while MouseKeyUpperLeft.is_pressed() {
-                    //move up left with fast or slow speed
-                    if *is_up_left_fast.lock().unwrap().borrow().clone() {
-                        //move up left with fast speed
-                        MouseCursor::move_abs(-1, -1);
-                        sleep(Duration::from_micros(fast_speed as u64));
-                    } else {
-                        //move up left with slow speed
-                        MouseCursor::move_abs(-1, -1);
-                        sleep(Duration::from_micros(slow_speed as u64));
-                    }
-                }
-            }
-        }),
-    );
-    //Numpad9Key.bind(|| {
-    MouseKeyUpperRight.bind(
-        enclose!((is_numlock_on=>is_numlock_on_up_right,is_fast=>is_up_right_fast) move || {
-            if *is_numlock_on_up_right.lock().unwrap().borrow().clone() {
-                while MouseKeyUpperRight.is_pressed() {
-                    //move up right with fast or slow speed
-                    if *is_up_right_fast.lock().unwrap().borrow().clone() {
-                        //move up right with fast speed
-                        MouseCursor::move_abs(1, -1);
-                        sleep(Duration::from_micros(fast_speed as u64));
-                    } else {
-                        //move up right with slow speed
-                        MouseCursor::move_abs(1, -1);
-                        sleep(Duration::from_micros(slow_speed as u64));
-                    }
-                }
-            }
-        }),
-    );
-    //Numpad3Key.bind(|| {
-    MouseKeyLowerRight.bind(
-        enclose!((is_numlock_on=>is_numlock_on_down_right,is_fast=>is_down_right_fast) move || {
-            if *is_numlock_on_down_right.lock().unwrap().borrow().clone() {
-                while MouseKeyLowerRight.is_pressed() {
-                    //move down right with fast or slow speed
-                    if *is_down_right_fast.lock().unwrap().borrow().clone() {
-                        //move down right with fast speed
-                        MouseCursor::move_abs(1, 1);
-                        sleep(Duration::from_micros(fast_speed as u64));
-                    } else {
-                        //move down right with slow speed
-                        MouseCursor::move_abs(1, 1);
-                        sleep(Duration::from_micros(slow_speed as u64));
-                    }
-                }
-            }
-        }),
-    );
-    //Numpad1Key.bind(|| {
-    MouseKeyLowerLeft.bind(
-        enclose!((is_numlock_on=>is_numlock_on_down_left,is_fast=>is_down_left_fast) move || {
-            if *is_numlock_on_down_left.lock().unwrap().borrow().clone() {
-                while MouseKeyLowerLeft.is_pressed() {
-                    //move down left with fast or slow speed
-                    if *is_down_left_fast.lock().unwrap().borrow().clone() {
-                        //move down left with fast speed
-                        MouseCursor::move_abs(-1, 1);
-                        sleep(Duration::from_micros(fast_speed as u64));
-                    } else {
-                        //move down left with slow speed
-                        MouseCursor::move_abs(-1, 1);
-                        sleep(Duration::from_micros(slow_speed as u64));
-                    }
-                }
-            }
-        }),
-    );
 
     //TODO: fix this naming in input keycode
     NumpadPlusKey.bind(
         enclose!((is_numlock_on=>is_numlock_on_click_toggle,left_click_toggle=> right_click_toggle) move || {
             if *is_numlock_on_click_toggle.lock().unwrap().borrow().clone() {
                 MouseButton::RightButton.press();
-                sleep(Duration::from_micros(10));
+                sleep(Duration::from_micros(click_speed as u64));
                 MouseButton::RightButton.release();
 
                 right_click_toggle
@@ -386,7 +361,7 @@ fn main() {
                 //let cur_value = *left_click_active.lock().unwrap().borrow().clone();
                 //if cur_value.clone() {
                 MouseButton::LeftButton.press();
-                sleep(Duration::from_micros(10));
+                sleep(Duration::from_micros(click_speed as u64));
                 MouseButton::LeftButton.release();
                 left_click_toggle
                     .to_owned()
