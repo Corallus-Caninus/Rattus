@@ -2,7 +2,7 @@ use inputbot::{
     self, handle_input_events, KeySequence, KeybdKey::*, MouseButton::*, MouseCursor, *,
 };
 // use these to feed to Rat_Tunnel network and animate
-// motions such as lines to track tunnel cursor teleports
+// motions such as lines to track tunnel cursor telepor
 use x11::xlib::{XGetImage, XPutImage};
 use x11::{xinput2, xlib};
 //import crate for delay
@@ -112,7 +112,7 @@ fn main() {
     //KP_Next
     //KP_Insert
     //KP_Delete
-    for i in 0..12 {
+    for i in 0..13 {
         let command_str = format!(
             "keycode {} =
         {}",
