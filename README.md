@@ -59,6 +59,8 @@ TODO:
 
 
 Currently tested with command:
-cargo build --release; sudo target/release/Rattus 5000 500
+cargo build --release; sudo target/release/Rattus 100 5000 500
 
-where number arguments are: slow speed and fast speed in terms of delay (smaller number is faster)
+where number arguments are: click speed (time between press and release) slow movement speed and fast movement speed
+
+values are in terms of delay (smaller number is faster)
