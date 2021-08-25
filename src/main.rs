@@ -1,16 +1,17 @@
 use inputbot::{
     self, handle_input_events, KeySequence, KeybdKey::*, MouseButton::*, MouseCursor, *,
 };
+//use tensorflow::ops::Enter;
 // use these to feed to Rat_Tunnel network and animate
 // motions such as lines to track tunnel cursor telepor
 use x11::xlib::{XGetImage, XPutImage};
 use x11::{xinput2, xlib};
 //import crate for delay
-use std;
 use std::collections::HashMap;
 use std::env;
 use std::thread::sleep;
 use std::time::Duration;
+use std::{self, primitive};
 //import box
 use enclose::enclose;
 use std::boxed::Box;
@@ -30,7 +31,9 @@ trait MoveRat {
         self,
         is_numlock_on: Arc<Mutex<RefCell<Box<bool>>>>,
         is_fast: Arc<Mutex<RefCell<Box<bool>>>>,
+        is_slow: Arc<Mutex<RefCell<Box<bool>>>>,
         fast_speed: u64,
+        medium_speed: u64,
         slow_speed: u64,
         mode_keypad: KeybdKey,
         mode_arrow: KeybdKey,
@@ -43,7 +46,9 @@ impl MoveRat for KeybdKey {
         self,
         is_numlock_on: Arc<Mutex<RefCell<Box<bool>>>>,
         is_fast: Arc<Mutex<RefCell<Box<bool>>>>,
+        is_slow: Arc<Mutex<RefCell<Box<bool>>>>,
         fast_speed: u64,
+        medium_speed: u64,
         slow_speed: u64,
         mode_keypad: KeybdKey,
         mode_arrow: KeybdKey,
@@ -53,15 +58,28 @@ impl MoveRat for KeybdKey {
         self.bind(enclose!((is_numlock_on, is_fast) move || {
             if *is_numlock_on.lock().unwrap().borrow().clone() {
                 while self.is_pressed() {
+                    let is_slow = *is_slow.lock().unwrap().borrow().clone();
+                    let is_fast = *is_fast.lock().unwrap().borrow().clone();
+                    //TODO: slow mode with mixing using plus key
                     //move up with fast or slow speed
-                    if *is_fast.lock().unwrap().borrow().clone() {
+                    if is_fast && is_slow {
                         //move up with fast speed
                         MouseCursor::move_abs(x, y);
+                        sleep(Duration::from_micros((medium_speed-fast_speed)/2 as u64)); //TODO
+                    }else if is_fast {
+                        //move up with slow speed
+                        MouseCursor::move_abs(x, y);
                         sleep(Duration::from_micros(fast_speed as u64));
-                    } else {
+                    }
+                    else if is_slow {
                         //move up with slow speed
                         MouseCursor::move_abs(x, y);
                         sleep(Duration::from_micros(slow_speed as u64));
+                    }
+                    else {
+                        //move up with medium speed
+                        MouseCursor::move_abs(x, y);
+                        sleep(Duration::from_micros(medium_speed as u64));
                     }
                 }
             }
@@ -76,6 +94,7 @@ fn main() {
         .map(|x| x.parse().unwrap())
         .collect::<Vec<i32>>();
     let fast_speed = args.pop().unwrap();
+    let medium_speed = args.pop().unwrap();
     let slow_speed = args.pop().unwrap();
     let click_speed = args.pop().unwrap();
 
@@ -92,6 +111,7 @@ fn main() {
     //TODO: NKRO locks this on mutex: if two or more buttons are pressed at the same time as is_fast is toggled.
     //      not a big deal.
     let is_fast = Arc::new(Mutex::new(RefCell::new(Box::new(false))));
+    let is_slow = Arc::new(Mutex::new(RefCell::new(Box::new(false))));
 
     // TODO: force this to sync with numlock on initialization
     let is_numlock_on = Arc::new(Mutex::new(RefCell::new(Box::new(true))));
@@ -127,9 +147,10 @@ fn main() {
     }
     //TODO: implement Enter key as slow mode with fast mode mixing
     //TODO this may be marginal with above loop check during implementation
+    //TODO: this is a hack to prevent keypad from sending
     awaits.push(
         std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 104 = 913 913"#])
+            .args(&["-e", r#"keycode 104 = 1000"#]) //TODO: wrong
             .spawn(),
     );
     //asterisk
@@ -141,17 +162,23 @@ fn main() {
     //forward slash
     awaits.push(
         std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 106 = 915 915"#])
+            .args(&["-e", r#"keycode 106 = 915"#]) //TODO: 98
             .spawn(),
     );
-    //TODO: not implemented
+    // enter
+    // awaits.push(
+    //     std::process::Command::new("xmodmap")
+    //         .args(&["-e", r#"keycode 104 = 916 916"#])
+    //         .spawn(),
+    // );
+    //TODO: ?
     //also remap numlock since NKRO numpads dont arrive in order at usb
     //hub causing entries to not have numlock signal prepended
-    awaits.push(
-        std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 77=916 916"#])
-            .spawn(),
-    );
+    // awaits.push(
+    //     std::process::Command::new("xmodmap")
+    //         .args(&["-e", r#"keycode 77=916 916"#])
+    //         .spawn(),
+    // );
     awaits.into_iter().for_each(|x| {
         x.unwrap();
     });
@@ -161,7 +188,9 @@ fn main() {
         // and i'll take what I can get from the borrow checker
         is_numlock_on.clone(),
         is_fast.clone(),
+        is_slow.clone(),
         fast_speed as u64,
+        medium_speed as u64,
         slow_speed as u64,
         Numpad8Key,
         UpKey,
@@ -171,7 +200,9 @@ fn main() {
     MouseKeyDown.move_rat(
         is_numlock_on.clone(),
         is_fast.clone(),
+        is_slow.clone(),
         fast_speed as u64,
+        medium_speed as u64,
         slow_speed as u64,
         Numpad2Key,
         DownKey,
@@ -181,7 +212,9 @@ fn main() {
     MouseKeyLeft.move_rat(
         is_numlock_on.clone(),
         is_fast.clone(),
+        is_slow.clone(),
         fast_speed as u64,
+        medium_speed as u64,
         slow_speed as u64,
         Numpad4Key,
         LeftKey,
@@ -191,7 +224,9 @@ fn main() {
     MouseKeyRight.move_rat(
         is_numlock_on.clone(),
         is_fast.clone(),
+        is_slow.clone(),
         fast_speed as u64,
+        medium_speed as u64,
         slow_speed as u64,
         Numpad6Key,
         RightKey,
@@ -201,7 +236,9 @@ fn main() {
     MouseKeyUpperLeft.move_rat(
         is_numlock_on.clone(),
         is_fast.clone(),
+        is_slow.clone(),
         fast_speed as u64,
+        medium_speed as u64,
         slow_speed as u64,
         Numpad7Key,
         //TODO: this should be up and left at the same time
@@ -212,7 +249,9 @@ fn main() {
     MouseKeyUpperRight.move_rat(
         is_numlock_on.clone(),
         is_fast.clone(),
+        is_slow.clone(),
         fast_speed as u64,
+        medium_speed as u64,
         slow_speed as u64,
         Numpad9Key,
         UpKey,
@@ -222,7 +261,9 @@ fn main() {
     MouseKeyLowerRight.move_rat(
         is_numlock_on.clone(),
         is_fast.clone(),
+        is_slow.clone(),
         fast_speed as u64,
+        medium_speed as u64,
         slow_speed as u64,
         Numpad3Key,
         DownKey,
@@ -232,7 +273,9 @@ fn main() {
     MouseKeyLowerLeft.move_rat(
         is_numlock_on.clone(),
         is_fast.clone(),
+        is_slow.clone(),
         fast_speed as u64,
+        medium_speed as u64,
         slow_speed as u64,
         Numpad1Key,
         DownKey,
@@ -257,28 +300,37 @@ fn main() {
         }),
     );
     //Numpad1Key.bind(|| {
+    //TODO: medium speed for held key check should be a config option?
     MouseKeyFast.bind(enclose!((is_numlock_on=>is_numlock_on_fast)move || {
-        if *is_numlock_on_fast.lock().unwrap().borrow().clone() {
             //set fast speed
             is_fast.to_owned().lock().unwrap().replace(Box::new(true));
             // fast is not modal for ergonomics.
             while MouseKeyFast.is_pressed() {
-                sleep(Duration::from_micros(slow_speed as u64));
+                sleep(Duration::from_micros(medium_speed as u64));
                 continue;
             }
             is_fast.to_owned().lock().unwrap().replace(Box::new(false));
-        }
     }));
+
+    //same as fast for slow using enter key
+    MouseKeySlow.bind(enclose!((is_slow)move || {
+        is_slow.to_owned().lock().unwrap().replace(Box::new(true));
+    }));
+    MouseKeySlow.release_bind(enclose!((is_slow) move||{
+        is_slow.to_owned().lock().unwrap().replace(Box::new(false));
+    }));
+
+    //TODO: numlock key is unreliable due to nkro and speed
     //toggle is numlock on each time num lock key is pressed
     // MouseKeyActivate.bind(move || {
-    NumLockKey.bind(enclose!((is_numlock_on) move || {
-        let cur_value = **is_numlock_on.clone().lock().unwrap().borrow();
-        is_numlock_on
-            .to_owned()
-            .lock()
-            .unwrap()
-            .replace(Box::new(!cur_value));
-    }));
+    // NumLockKey.bind(enclose!((is_numlock_on) move || {
+    //     let cur_value = **is_numlock_on.clone().lock().unwrap().borrow();
+    //     is_numlock_on
+    //         .to_owned()
+    //         .lock()
+    //         .unwrap()
+    //         .replace(Box::new(!cur_value));
+    // }));
 
     //Numpad5Key.bind(|| {
     MouseKeyMiddle.bind(
