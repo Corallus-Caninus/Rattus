@@ -97,6 +97,15 @@ fn main() {
     let medium_speed = args.pop().unwrap();
     let slow_speed = args.pop().unwrap();
     let click_speed = args.pop().unwrap();
+    //assert that fast is greater than medium etc with the message x must be faster than y
+    assert!(
+        fast_speed < medium_speed,
+        "fast_speed must be greater than medium_speed"
+    );
+    assert!(
+        medium_speed < slow_speed,
+        "medium_speed must be greater than slow_speed"
+    );
 
     //the history buffer of mouse clicks and current location
     // let mut history = vec![];
@@ -154,17 +163,17 @@ fn main() {
             .spawn(),
     );
     //asterisk
-    awaits.push(
-        std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 63 = 914 914"#])
-            .spawn(),
-    );
+    // awaits.push(
+    //     std::process::Command::new("xmodmap")
+    //         .args(&["-e", r#"keycode 63 = 914 914"#])
+    //         .spawn(),
+    // );
     //forward slash
-    awaits.push(
-        std::process::Command::new("xmodmap")
-            .args(&["-e", r#"keycode 106 = 915"#]) //TODO: 98
-            .spawn(),
-    );
+    // awaits.push(
+    //     std::process::Command::new("xmodmap")
+    //         .args(&["-e", r#"keycode 106 = 915"#]) //TODO: 98
+    //         .spawn(),
+    // );
     // enter
     // awaits.push(
     //     std::process::Command::new("xmodmap")
@@ -301,16 +310,16 @@ fn main() {
     );
     //Numpad1Key.bind(|| {
     //TODO: medium speed for held key check should be a config option?
-    MouseKeyFast.bind(enclose!((is_numlock_on=>is_numlock_on_fast)move || {
-            //set fast speed
-            is_fast.to_owned().lock().unwrap().replace(Box::new(true));
-            // fast is not modal for ergonomics.
-            while MouseKeyFast.is_pressed() {
-                sleep(Duration::from_micros(medium_speed as u64));
-                continue;
-            }
-            is_fast.to_owned().lock().unwrap().replace(Box::new(false));
-    }));
+    // MouseKeyFast.bind(enclose!((is_numlock_on=>is_numlock_on_fast)move || {
+    //         //set fast speed
+    //         is_fast.to_owned().lock().unwrap().replace(Box::new(true));
+    //         // fast is not modal for ergonomics.
+    //         while MouseKeyFast.is_pressed() {
+    //             sleep(Duration::from_micros(medium_speed as u64));
+    //             continue;
+    //         }
+    //         is_fast.to_owned().lock().unwrap().replace(Box::new(false));
+    // }));
 
     //same as fast for slow using enter key
     MouseKeySlow.bind(enclose!((is_slow)move || {
@@ -318,6 +327,12 @@ fn main() {
     }));
     MouseKeySlow.release_bind(enclose!((is_slow) move||{
         is_slow.to_owned().lock().unwrap().replace(Box::new(false));
+    }));
+    MouseKeyFast.bind(enclose!((is_fast)move || {
+        is_fast.to_owned().lock().unwrap().replace(Box::new(true));
+    }));
+    MouseKeyFast.release_bind(enclose!((is_fast) move||{
+        is_fast.to_owned().lock().unwrap().replace(Box::new(false));
     }));
 
     //TODO: numlock key is unreliable due to nkro and speed
