@@ -27,6 +27,8 @@ A modal Mouse Key meant to entirely replace the mouse Currently tested on Linux 
 
 0/Insert: hold for fast movement
 
+Enter: hold for slow movement
+
 ./Del: toggle hold on right or left click (click to toggle out)
 
 Rattus is under active development.
@@ -59,8 +61,8 @@ TODO:
 
 
 Currently tested with command:
-cargo build --release; sudo target/release/Rattus 100 5000 500
+cargo build --release; sudo target/release/Rattus 100 20000 5000 500
 
-where number arguments are: click speed (time between press and release) slow movement speed and fast movement speed
+where number arguments are: click speed (time between press and release), slow movement speed, normal movement speed, fast movement speed
 
 values are in terms of delay (smaller number is faster)
