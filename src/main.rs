@@ -38,9 +38,11 @@ trait MoveRat {
         fast_speed: u64,
         medium_speed: u64,
         slow_speed: u64,
+        arrow_speed: u64,
         mode_keypad: KeybdKey,
         // mode_arrow: KeybdKey,
         mode_arrow: keyboard::Key,
+        mode_alt_arrow: Option<keyboard::Key>,
         x: i32,
         y: i32,
     );
@@ -55,12 +57,15 @@ impl MoveRat for KeybdKey {
         fast_speed: u64,
         medium_speed: u64,
         slow_speed: u64,
+        arrow_speed: u64,
         mode_keypad: KeybdKey,
         // mode_arrow: KeybdKey,
         mode_arrow: keyboard::Key,
+        mode_alt_arrow: Option<keyboard::Key>,
         x: i32,
         y: i32,
     ) {
+        //TODO bind with release instead of while pressed not all keys and keyboards support this
         self.bind(move || {
             while self.is_pressed() {
                 if *is_rat_on.lock().unwrap().borrow().clone() {
@@ -91,25 +96,32 @@ impl MoveRat for KeybdKey {
                     //TODO: NKRO x11 writes
                     //TODO: press and hold mode
                     //TODO: consolidate this with inputbot in a way that is contributable
-                    &KEYBD_DEVICE.lock().unwrap().press(&mode_arrow).unwrap();
-                    &KEYBD_DEVICE.lock().unwrap().synchronize();
-                    &KEYBD_DEVICE.lock().unwrap().release(&mode_arrow).unwrap();
-                    &KEYBD_DEVICE.lock().unwrap().synchronize();
-                    sleep(Duration::from_micros(medium_speed as u64));
-                    //mode_arrow.press();
+                    //TODO: arrow speed param
+                    if mode_alt_arrow.is_none() {
+                        KEYBD_DEVICE.lock().unwrap().click(&mode_arrow).unwrap();
+                        sleep(Duration::from_micros(arrow_speed as u64));
+                    } else {
+                        KEYBD_DEVICE
+                            .lock()
+                            .unwrap()
+                            .click(&mode_alt_arrow.unwrap())
+                            .unwrap();
+                        KEYBD_DEVICE.lock().unwrap().click(&mode_arrow).unwrap();
+                        sleep(Duration::from_micros(arrow_speed as u64));
+                    }
+                    //TODO: hold ins/ent for n presses fast and slow mode based on speed
                 } else {
                     //press and release arrow with medium speed
                     // mode_keypad.click(Duration::from_micros(medium_speed as u64));
                     mode_keypad.press();
-                    &KEYBD_DEVICE.lock().unwrap().synchronize();
                     mode_keypad.release();
-                    &KEYBD_DEVICE.lock().unwrap().synchronize();
                     sleep(Duration::from_micros(medium_speed as u64));
                 }
             }
         });
     }
 }
+//TODO: configuration file: params are too large
 //TODO: use led settings for custom blink codes or other modal user feedback
 fn main() {
     //TODO: this is to focus the virtual device
@@ -124,6 +136,7 @@ fn main() {
     let fast_speed = args.pop().unwrap();
     let medium_speed = args.pop().unwrap();
     let slow_speed = args.pop().unwrap();
+    let arrow_speed = args.pop().unwrap();
     let click_speed = args.pop().unwrap();
     //assert that fast is greater than medium etc with the message x must be faster than y
     assert!(
@@ -231,9 +244,11 @@ fn main() {
         fast_speed as u64,
         medium_speed as u64,
         slow_speed as u64,
+        arrow_speed as u64,
         Numrow8Key,
         // UpKey,
         keyboard::Key::Up,
+        None,
         0,
         -1,
     );
@@ -245,9 +260,11 @@ fn main() {
         fast_speed as u64,
         medium_speed as u64,
         slow_speed as u64,
+        arrow_speed as u64,
         Numrow2Key,
         // DownKey,
         keyboard::Key::Down,
+        None,
         0,
         1,
     );
@@ -259,9 +276,11 @@ fn main() {
         fast_speed as u64,
         medium_speed as u64,
         slow_speed as u64,
+        arrow_speed as u64,
         Numrow4Key,
         // LeftKey,
         keyboard::Key::Left,
+        None,
         -1,
         0,
     );
@@ -273,9 +292,11 @@ fn main() {
         fast_speed as u64,
         medium_speed as u64,
         slow_speed as u64,
+        arrow_speed as u64,
         Numrow6Key,
         // RightKey,
         keyboard::Key::Right,
+        None,
         1,
         0,
     );
@@ -287,10 +308,12 @@ fn main() {
         fast_speed as u64,
         medium_speed as u64,
         slow_speed as u64,
+        arrow_speed as u64,
         Numrow7Key,
         //TODO: this should be up and left at the same time
         // UpKey,
         keyboard::Key::Up,
+        Some(keyboard::Key::Left),
         -1,
         -1,
     );
@@ -302,9 +325,11 @@ fn main() {
         fast_speed as u64,
         medium_speed as u64,
         slow_speed as u64,
+        arrow_speed as u64,
         Numrow9Key,
         // UpKey,
-        keyboard::Key::PageUp,
+        keyboard::Key::Up,
+        Some(keyboard::Key::Right),
         1,
         -1,
     );
@@ -316,9 +341,11 @@ fn main() {
         fast_speed as u64,
         medium_speed as u64,
         slow_speed as u64,
+        arrow_speed as u64,
         Numrow3Key,
         // DownKey,
-        keyboard::Key::PageDown,
+        keyboard::Key::Down,
+        Some(keyboard::Key::Right),
         1,
         1,
     );
@@ -330,9 +357,11 @@ fn main() {
         fast_speed as u64,
         medium_speed as u64,
         slow_speed as u64,
+        arrow_speed as u64,
         Numrow1Key,
         // DownKey,
         keyboard::Key::Down,
+        Some(keyboard::Key::Left),
         -1,
         1,
     );
@@ -396,9 +425,7 @@ fn main() {
                         .replace(Box::new(true));
                 } else if !**is_numlock_on.clone().lock().unwrap().borrow() {
                     &KEYBD_DEVICE.lock().unwrap().press(&keyboard::Key::_5).unwrap();
-                    &KEYBD_DEVICE.lock().unwrap().synchronize();
                     &KEYBD_DEVICE.lock().unwrap().release(&keyboard::Key::_5).unwrap();
-                    &KEYBD_DEVICE.lock().unwrap().synchronize();
                 }
         }),
     );
