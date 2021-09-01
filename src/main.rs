@@ -4,13 +4,16 @@ use inputbot::{
 //use tensorflow::ops::Enter;
 // use these to feed to Rat_Tunnel network and animate
 // motions such as lines to track tunnel cursor teleport
+use toml;
 use x11::xlib::{XGetImage, XPutImage};
-use x11::{xinput2, xlib};
-//import crate for delay
+use x11::{xinput2, xlib}; //for config file
+                          //import crate for delay
 use std::collections::HashMap;
 use std::env;
+use std::io::Read;
 use std::thread::sleep;
 use std::time::Duration;
+use std::fs::File;
 use std::{self, primitive};
 use uinput;
 use uinput::event::keyboard;
@@ -19,7 +22,17 @@ use enclose::enclose;
 use std::boxed::Box;
 use std::cell::{Cell, RefCell};
 use std::sync::{Arc, Mutex};
+use serde_derive::{Deserialize, Serialize};
 
+//Config file Data Structure
+#[derive(Deserialize)]
+struct Config {
+    click_speed: i32,
+    fast_speed: i32,
+    medium_speed: i32,
+    slow_speed: i32,
+    arrow_speed: i32,
+}
 //a single action of the mouse
 //TODO serialize and save these to dot file
 struct Mouse_Action {
@@ -93,12 +106,14 @@ impl MoveRat for KeybdKey {
                         sleep(Duration::from_micros(medium_speed as u64));
                     }
                 } else if *is_numlock_on.lock().unwrap().borrow().clone() {
-                    //TODO: NKRO x11 writes
-                    //TODO: press and hold mode
+                    //TODO: move all non mouse modes into a bind+release_bind paradigm
+                    //TODO: consider not using uinput since stream buffer seems to have delay, what does xlib have native support for?
                     //TODO: consolidate this with inputbot in a way that is contributable
-                    //TODO: arrow speed param
+                    //TODO: arrow and numpad speed params
+                    //TODO: hold ins/ent for n presses fast and slow mode based on speed
                     if mode_alt_arrow.is_none() {
                         KEYBD_DEVICE.lock().unwrap().click(&mode_arrow).unwrap();
+                        KEYBD_DEVICE.lock().unwrap().synchronize().unwrap();
                         sleep(Duration::from_micros(arrow_speed as u64));
                     } else {
                         KEYBD_DEVICE
@@ -107,37 +122,48 @@ impl MoveRat for KeybdKey {
                             .click(&mode_alt_arrow.unwrap())
                             .unwrap();
                         KEYBD_DEVICE.lock().unwrap().click(&mode_arrow).unwrap();
+                        KEYBD_DEVICE.lock().unwrap().synchronize().unwrap();
                         sleep(Duration::from_micros(arrow_speed as u64));
                     }
-                    //TODO: hold ins/ent for n presses fast and slow mode based on speed
                 } else {
                     //press and release arrow with medium speed
                     // mode_keypad.click(Duration::from_micros(medium_speed as u64));
-                    mode_keypad.press();
-                    mode_keypad.release();
-                    sleep(Duration::from_micros(medium_speed as u64));
+                    mode_keypad.click(Duration::from_micros(arrow_speed as u64));
                 }
             }
         });
     }
 }
-//TODO: configuration file: params are too large
+
+
 //TODO: use led settings for custom blink codes or other modal user feedback
 fn main() {
     //TODO: this is to focus the virtual device
     AKey.release();
     sleep(Duration::from_millis(100));
+    //open config file and read into toml struct
+    let mut config_file = File::open("Rat_config.toml").unwrap();
+    let mut config_string = String::new();
+    config_file.read_to_string(&mut config_string).unwrap();
+    let config: Config = toml::from_str(&config_string).unwrap();
 
-    let args = env::args().skip(1).collect::<Vec<String>>();
-    let mut args = args
-        .into_iter()
-        .map(|x| x.parse().unwrap())
-        .collect::<Vec<i32>>();
-    let fast_speed = args.pop().unwrap();
-    let medium_speed = args.pop().unwrap();
-    let slow_speed = args.pop().unwrap();
-    let arrow_speed = args.pop().unwrap();
-    let click_speed = args.pop().unwrap();
+    //TODO: configuration file: params are too large
+    // let args = env::args().skip(1).collect::<Vec<String>>();
+    // let mut args = args
+    //     .into_iter()
+    //     .map(|x| x.parse().unwrap())
+    //     .collect::<Vec<i32>>();
+    // let fast_speed = args.pop().unwrap();
+    // let medium_speed = args.pop().unwrap();
+    // let slow_speed = args.pop().unwrap();
+    // let arrow_speed = args.pop().unwrap();
+    // let click_speed = args.pop().unwrap();
+    let fast_speed = config.fast_speed;
+    let medium_speed = config.medium_speed;
+    let slow_speed = config.slow_speed;
+    let arrow_speed = config.arrow_speed;
+    let click_speed = config.click_speed;
+
     //assert that fast is greater than medium etc with the message x must be faster than y
     assert!(
         fast_speed < medium_speed,
