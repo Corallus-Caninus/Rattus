@@ -61,8 +61,5 @@ TODO:
 
 
 Currently tested with command:
-cargo build --release; sudo target/release/Rattus 100 20000 5000 500
-
-where number arguments are: click speed (time between press and release), slow movement speed, normal movement speed, fast movement speed
-
-values are in terms of delay (smaller number is faster)
+cargo build --release; sudo target/release/Rattus
+configuration (slowing down and speeding things up) can be edited in the Rat_config.toml file.
