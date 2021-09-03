@@ -4,25 +4,27 @@ use inputbot::{
 //use tensorflow::ops::Enter;
 // use these to feed to Rat_Tunnel network and animate
 // motions such as lines to track tunnel cursor teleport
-use toml;
-use x11::xlib::{XGetImage, XPutImage};
-use x11::{xinput2, xlib}; //for config file
-                          //import crate for delay
-use std::collections::HashMap;
-use std::env;
-use std::io::Read;
-use std::thread::sleep;
-use std::time::Duration;
-use std::fs::File;
-use std::{self, primitive};
-use uinput;
-use uinput::event::keyboard;
-//import box
-use enclose::enclose;
 use std::boxed::Box;
 use std::cell::{Cell, RefCell};
+use std::collections::HashMap;
+use std::env;
+use std::fs::File;
+use std::io::Read;
 use std::sync::{Arc, Mutex};
+use std::thread::sleep;
+use std::time::Duration;
+use std::{self, primitive};
+
+use x11::xlib::{XGetImage, XPutImage, XStringToKeysym};
+use x11::{xinput2, xlib}; //for config file
+
+use uinput;
+use uinput::event::keyboard;
+
+use enclose::enclose;
 use serde_derive::{Deserialize, Serialize};
+
+use toml;
 
 //Config file Data Structure
 #[derive(Deserialize)]
@@ -31,7 +33,9 @@ struct Config {
     fast_speed: i32,
     medium_speed: i32,
     slow_speed: i32,
-    arrow_speed: i32,
+    fast_arrow_speed: i32,
+    medium_arrow_speed: i32,
+    slow_arrow_speed: i32,
 }
 //a single action of the mouse
 //TODO serialize and save these to dot file
@@ -41,8 +45,8 @@ struct Mouse_Action {
     is_clicked: bool,
 }
 
-trait MoveRat {
-    fn move_rat(
+trait RatMode {
+    fn rat_mode(
         self,
         is_fast: Arc<Mutex<RefCell<Box<bool>>>>,
         is_slow: Arc<Mutex<RefCell<Box<bool>>>>,
@@ -51,7 +55,9 @@ trait MoveRat {
         fast_speed: u64,
         medium_speed: u64,
         slow_speed: u64,
-        arrow_speed: u64,
+        fast_arrow_speed: u64,
+        medium_arrow_speed: u64,
+        slow_arrow_speed: u64,
         mode_keypad: KeybdKey,
         // mode_arrow: KeybdKey,
         mode_arrow: keyboard::Key,
@@ -60,8 +66,8 @@ trait MoveRat {
         y: i32,
     );
 }
-impl MoveRat for KeybdKey {
-    fn move_rat(
+impl RatMode for KeybdKey {
+    fn rat_mode(
         self,
         is_fast: Arc<Mutex<RefCell<Box<bool>>>>,
         is_slow: Arc<Mutex<RefCell<Box<bool>>>>,
@@ -70,7 +76,9 @@ impl MoveRat for KeybdKey {
         fast_speed: u64,
         medium_speed: u64,
         slow_speed: u64,
-        arrow_speed: u64,
+        fast_arrow_speed: u64,
+        medium_arrow_speed: u64,
+        slow_arrow_speed: u64,
         mode_keypad: KeybdKey,
         // mode_arrow: KeybdKey,
         mode_arrow: keyboard::Key,
@@ -81,9 +89,9 @@ impl MoveRat for KeybdKey {
         //TODO bind with release instead of while pressed not all keys and keyboards support this
         self.bind(move || {
             while self.is_pressed() {
+                let is_slow = *is_slow.lock().unwrap().borrow().clone();
+                let is_fast = *is_fast.lock().unwrap().borrow().clone();
                 if *is_rat_on.lock().unwrap().borrow().clone() {
-                    let is_slow = *is_slow.lock().unwrap().borrow().clone();
-                    let is_fast = *is_fast.lock().unwrap().borrow().clone();
                     //TODO: slow mode with mixing using plus key
                     //move up with fast or slow speed
                     if is_fast && is_slow {
@@ -107,10 +115,20 @@ impl MoveRat for KeybdKey {
                     }
                 } else if *is_numlock_on.lock().unwrap().borrow().clone() {
                     //TODO: move all non mouse modes into a bind+release_bind paradigm
-                    //TODO: consider not using uinput since stream buffer seems to have delay, what does xlib have native support for?
+                    //TODO: consider not using uinput since stream buffer seems to have delay,
+                    //      what does xlib have native support for?
                     //TODO: consolidate this with inputbot in a way that is contributable
                     //TODO: arrow and numpad speed params
                     //TODO: hold ins/ent for n presses fast and slow mode based on speed
+                    let mut arrow_speed = medium_arrow_speed;
+                    if is_fast && is_slow {
+                        arrow_speed = (medium_arrow_speed - fast_arrow_speed) / 2;
+                    } else if is_fast {
+                        arrow_speed = fast_arrow_speed;
+                    } else if is_slow {
+                        arrow_speed = slow_arrow_speed;
+                    }
+
                     if mode_alt_arrow.is_none() {
                         KEYBD_DEVICE.lock().unwrap().click(&mode_arrow).unwrap();
                         KEYBD_DEVICE.lock().unwrap().synchronize().unwrap();
@@ -128,40 +146,32 @@ impl MoveRat for KeybdKey {
                 } else {
                     //press and release arrow with medium speed
                     // mode_keypad.click(Duration::from_micros(medium_speed as u64));
-                    mode_keypad.click(Duration::from_micros(arrow_speed as u64));
+                    mode_keypad.click(Duration::from_micros(medium_arrow_speed as u64));
+                    sleep(Duration::from_micros(medium_arrow_speed as u64));
                 }
             }
         });
     }
 }
 
-
 //TODO: use led settings for custom blink codes or other modal user feedback
 fn main() {
     //TODO: this is to focus the virtual device
     AKey.release();
     sleep(Duration::from_millis(100));
-    //open config file and read into toml struct
+
+    //open config file and read toml into config struct
     let mut config_file = File::open("Rat_config.toml").unwrap();
     let mut config_string = String::new();
     config_file.read_to_string(&mut config_string).unwrap();
     let config: Config = toml::from_str(&config_string).unwrap();
 
-    //TODO: configuration file: params are too large
-    // let args = env::args().skip(1).collect::<Vec<String>>();
-    // let mut args = args
-    //     .into_iter()
-    //     .map(|x| x.parse().unwrap())
-    //     .collect::<Vec<i32>>();
-    // let fast_speed = args.pop().unwrap();
-    // let medium_speed = args.pop().unwrap();
-    // let slow_speed = args.pop().unwrap();
-    // let arrow_speed = args.pop().unwrap();
-    // let click_speed = args.pop().unwrap();
     let fast_speed = config.fast_speed;
     let medium_speed = config.medium_speed;
     let slow_speed = config.slow_speed;
-    let arrow_speed = config.arrow_speed;
+    let fast_arrow_speed = config.fast_arrow_speed;
+    let medium_arrow_speed = config.medium_arrow_speed;
+    let slow_arrow_speed = config.slow_arrow_speed;
     let click_speed = config.click_speed;
 
     //assert that fast is greater than medium etc with the message x must be faster than y
@@ -260,7 +270,7 @@ fn main() {
     });
 
     //TODO: diagonals with two arrows
-    MouseKeyUp.move_rat(
+    MouseKeyUp.rat_mode(
         // cloning here is weird but doesnt really matter since this is config
         // and i'll take what I can get from the borrow checker
         is_fast.clone(),
@@ -270,7 +280,9 @@ fn main() {
         fast_speed as u64,
         medium_speed as u64,
         slow_speed as u64,
-        arrow_speed as u64,
+        fast_arrow_speed as u64,
+        medium_arrow_speed as u64,
+        slow_arrow_speed as u64,
         Numrow8Key,
         // UpKey,
         keyboard::Key::Up,
@@ -278,7 +290,7 @@ fn main() {
         0,
         -1,
     );
-    MouseKeyDown.move_rat(
+    MouseKeyDown.rat_mode(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -286,7 +298,9 @@ fn main() {
         fast_speed as u64,
         medium_speed as u64,
         slow_speed as u64,
-        arrow_speed as u64,
+        fast_arrow_speed as u64,
+        medium_arrow_speed as u64,
+        slow_arrow_speed as u64,
         Numrow2Key,
         // DownKey,
         keyboard::Key::Down,
@@ -294,7 +308,7 @@ fn main() {
         0,
         1,
     );
-    MouseKeyLeft.move_rat(
+    MouseKeyLeft.rat_mode(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -302,7 +316,9 @@ fn main() {
         fast_speed as u64,
         medium_speed as u64,
         slow_speed as u64,
-        arrow_speed as u64,
+        fast_arrow_speed as u64,
+        medium_arrow_speed as u64,
+        slow_arrow_speed as u64,
         Numrow4Key,
         // LeftKey,
         keyboard::Key::Left,
@@ -310,7 +326,7 @@ fn main() {
         -1,
         0,
     );
-    MouseKeyRight.move_rat(
+    MouseKeyRight.rat_mode(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -318,7 +334,9 @@ fn main() {
         fast_speed as u64,
         medium_speed as u64,
         slow_speed as u64,
-        arrow_speed as u64,
+        fast_arrow_speed as u64,
+        medium_arrow_speed as u64,
+        slow_arrow_speed as u64,
         Numrow6Key,
         // RightKey,
         keyboard::Key::Right,
@@ -326,7 +344,7 @@ fn main() {
         1,
         0,
     );
-    MouseKeyUpperLeft.move_rat(
+    MouseKeyUpperLeft.rat_mode(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -334,7 +352,9 @@ fn main() {
         fast_speed as u64,
         medium_speed as u64,
         slow_speed as u64,
-        arrow_speed as u64,
+        fast_arrow_speed as u64,
+        medium_arrow_speed as u64,
+        slow_arrow_speed as u64,
         Numrow7Key,
         //TODO: this should be up and left at the same time
         // UpKey,
@@ -343,7 +363,7 @@ fn main() {
         -1,
         -1,
     );
-    MouseKeyUpperRight.move_rat(
+    MouseKeyUpperRight.rat_mode(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -351,7 +371,9 @@ fn main() {
         fast_speed as u64,
         medium_speed as u64,
         slow_speed as u64,
-        arrow_speed as u64,
+        fast_arrow_speed as u64,
+        medium_arrow_speed as u64,
+        slow_arrow_speed as u64,
         Numrow9Key,
         // UpKey,
         keyboard::Key::Up,
@@ -359,7 +381,7 @@ fn main() {
         1,
         -1,
     );
-    MouseKeyLowerRight.move_rat(
+    MouseKeyLowerRight.rat_mode(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -367,7 +389,9 @@ fn main() {
         fast_speed as u64,
         medium_speed as u64,
         slow_speed as u64,
-        arrow_speed as u64,
+        fast_arrow_speed as u64,
+        medium_arrow_speed as u64,
+        slow_arrow_speed as u64,
         Numrow3Key,
         // DownKey,
         keyboard::Key::Down,
@@ -375,7 +399,7 @@ fn main() {
         1,
         1,
     );
-    MouseKeyLowerLeft.move_rat(
+    MouseKeyLowerLeft.rat_mode(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -383,7 +407,9 @@ fn main() {
         fast_speed as u64,
         medium_speed as u64,
         slow_speed as u64,
-        arrow_speed as u64,
+        fast_arrow_speed as u64,
+        medium_arrow_speed as u64,
+        slow_arrow_speed as u64,
         Numrow1Key,
         // DownKey,
         keyboard::Key::Down,

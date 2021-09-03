@@ -1,7 +1,9 @@
 #parameters for Rattus
 #values are listed as microsecond delays (smaller is faster)
-click_speed=50
+click_speed=5
 fast_speed=300
 medium_speed=3000
 slow_speed=20000
-arrow_speed=100000
+fast_arrow_speed=20000
+medium_arrow_speed=100000
+slow_arrow_speed=400000
