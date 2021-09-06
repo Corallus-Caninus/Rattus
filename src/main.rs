@@ -17,6 +17,8 @@ use std::{self, primitive};
 
 use x11::xlib::{XGetImage, XPutImage, XStringToKeysym};
 use x11::{xinput2, xlib}; //for config file
+                          //for drawing to the screen
+use x11::xlib::XDrawLine;
 
 use uinput;
 use uinput::event::keyboard;
@@ -25,7 +27,6 @@ use enclose::enclose;
 use serde_derive::{Deserialize, Serialize};
 
 use toml;
-
 //Config file Data Structure
 #[derive(Deserialize)]
 struct Config {
@@ -36,6 +37,7 @@ struct Config {
     fast_arrow_speed: i32,
     medium_arrow_speed: i32,
     slow_arrow_speed: i32,
+    numpad_speed: i32,
 }
 //a single action of the mouse
 //TODO serialize and save these to dot file
@@ -45,8 +47,11 @@ struct Mouse_Action {
     is_clicked: bool,
 }
 
+// TODO: this should just be a struct with impl or a function that takes
+// keybdkey I was just trying out trait syntax and Rust inheretance.
+// this has no shared behavior potential
 trait RatMode {
-    fn rat_mode(
+    fn rat_modes(
         self,
         is_fast: Arc<Mutex<RefCell<Box<bool>>>>,
         is_slow: Arc<Mutex<RefCell<Box<bool>>>>,
@@ -58,6 +63,7 @@ trait RatMode {
         fast_arrow_speed: u64,
         medium_arrow_speed: u64,
         slow_arrow_speed: u64,
+        numpad_speed: u64,
         mode_keypad: KeybdKey,
         // mode_arrow: KeybdKey,
         mode_arrow: keyboard::Key,
@@ -67,7 +73,7 @@ trait RatMode {
     );
 }
 impl RatMode for KeybdKey {
-    fn rat_mode(
+    fn rat_modes(
         self,
         is_fast: Arc<Mutex<RefCell<Box<bool>>>>,
         is_slow: Arc<Mutex<RefCell<Box<bool>>>>,
@@ -79,6 +85,7 @@ impl RatMode for KeybdKey {
         fast_arrow_speed: u64,
         medium_arrow_speed: u64,
         slow_arrow_speed: u64,
+        numpad_speed: u64,
         mode_keypad: KeybdKey,
         // mode_arrow: KeybdKey,
         mode_arrow: keyboard::Key,
@@ -146,8 +153,11 @@ impl RatMode for KeybdKey {
                 } else {
                     //press and release arrow with medium speed
                     // mode_keypad.click(Duration::from_micros(medium_speed as u64));
-                    mode_keypad.click(Duration::from_micros(medium_arrow_speed as u64));
-                    sleep(Duration::from_micros(medium_arrow_speed as u64));
+                    //TODO: add the rest of keypad in
+                    // mode_keypad.click(Duration::from_micros(10 as u64));
+                    mode_keypad.press();
+                    sleep(Duration::from_micros(numpad_speed as u64));
+                    mode_keypad.release();
                 }
             }
         });
@@ -156,7 +166,7 @@ impl RatMode for KeybdKey {
 
 //TODO: use led settings for custom blink codes or other modal user feedback
 fn main() {
-    //TODO: this is to focus the virtual device
+    //TODO: this is to focus the virtual device and needs to be deprecated
     AKey.release();
     sleep(Duration::from_millis(100));
 
@@ -172,6 +182,7 @@ fn main() {
     let fast_arrow_speed = config.fast_arrow_speed;
     let medium_arrow_speed = config.medium_arrow_speed;
     let slow_arrow_speed = config.slow_arrow_speed;
+    let numpad_speed = config.numpad_speed;
     let click_speed = config.click_speed;
 
     //assert that fast is greater than medium etc with the message x must be faster than y
@@ -194,12 +205,12 @@ fn main() {
     let left_click_toggle = Arc::new(Mutex::new(RefCell::new(Box::new(true))));
 
     //create is_fast for up down left right and all diagonals
-    //TODO: NKRO locks this on mutex: if two or more buttons are pressed at the same time as is_fast is toggled.
+    //NOTE: NKRO locks this on mutex: if two or more buttons are pressed at the same time as is_fast is toggled.
     //      not a big deal.
     let is_fast = Arc::new(Mutex::new(RefCell::new(Box::new(false))));
     let is_slow = Arc::new(Mutex::new(RefCell::new(Box::new(false))));
 
-    // TODO: force this to sync with numlock on initialization
+    // TODO: force this to sync with numlock on initialization or (preferably) keep led in sync otherwise
     let is_numlock_on = Arc::new(Mutex::new(RefCell::new(Box::new(true))));
     let is_rat_on = Arc::new(Mutex::new(RefCell::new(Box::new(true))));
 
@@ -254,7 +265,7 @@ fn main() {
     // enter
     // awaits.push(
     //     std::process::Command::new("xmodmap")
-    //         .args(&["-e", r#"keycode 104 = 916 916"#])
+    //        .args(&["-e", r#"keycode 104 = 916 916"#])
     //         .spawn(),
     // );
     //TODO: ?
@@ -269,8 +280,8 @@ fn main() {
         x.unwrap();
     });
 
-    //TODO: diagonals with two arrows
-    MouseKeyUp.rat_mode(
+    //TODO: these should still be a macro or just one function that calls others?
+    MouseKeyUp.rat_modes(
         // cloning here is weird but doesnt really matter since this is config
         // and i'll take what I can get from the borrow checker
         is_fast.clone(),
@@ -283,6 +294,7 @@ fn main() {
         fast_arrow_speed as u64,
         medium_arrow_speed as u64,
         slow_arrow_speed as u64,
+        numpad_speed as u64,
         Numrow8Key,
         // UpKey,
         keyboard::Key::Up,
@@ -290,7 +302,7 @@ fn main() {
         0,
         -1,
     );
-    MouseKeyDown.rat_mode(
+    MouseKeyDown.rat_modes(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -301,6 +313,7 @@ fn main() {
         fast_arrow_speed as u64,
         medium_arrow_speed as u64,
         slow_arrow_speed as u64,
+        numpad_speed as u64,
         Numrow2Key,
         // DownKey,
         keyboard::Key::Down,
@@ -308,7 +321,7 @@ fn main() {
         0,
         1,
     );
-    MouseKeyLeft.rat_mode(
+    MouseKeyLeft.rat_modes(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -319,6 +332,7 @@ fn main() {
         fast_arrow_speed as u64,
         medium_arrow_speed as u64,
         slow_arrow_speed as u64,
+        numpad_speed as u64,
         Numrow4Key,
         // LeftKey,
         keyboard::Key::Left,
@@ -326,7 +340,7 @@ fn main() {
         -1,
         0,
     );
-    MouseKeyRight.rat_mode(
+    MouseKeyRight.rat_modes(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -337,6 +351,7 @@ fn main() {
         fast_arrow_speed as u64,
         medium_arrow_speed as u64,
         slow_arrow_speed as u64,
+        numpad_speed as u64,
         Numrow6Key,
         // RightKey,
         keyboard::Key::Right,
@@ -344,7 +359,7 @@ fn main() {
         1,
         0,
     );
-    MouseKeyUpperLeft.rat_mode(
+    MouseKeyUpperLeft.rat_modes(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -355,6 +370,7 @@ fn main() {
         fast_arrow_speed as u64,
         medium_arrow_speed as u64,
         slow_arrow_speed as u64,
+        numpad_speed as u64,
         Numrow7Key,
         //TODO: this should be up and left at the same time
         // UpKey,
@@ -363,7 +379,7 @@ fn main() {
         -1,
         -1,
     );
-    MouseKeyUpperRight.rat_mode(
+    MouseKeyUpperRight.rat_modes(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -374,6 +390,7 @@ fn main() {
         fast_arrow_speed as u64,
         medium_arrow_speed as u64,
         slow_arrow_speed as u64,
+        numpad_speed as u64,
         Numrow9Key,
         // UpKey,
         keyboard::Key::Up,
@@ -381,7 +398,7 @@ fn main() {
         1,
         -1,
     );
-    MouseKeyLowerRight.rat_mode(
+    MouseKeyLowerRight.rat_modes(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -392,6 +409,7 @@ fn main() {
         fast_arrow_speed as u64,
         medium_arrow_speed as u64,
         slow_arrow_speed as u64,
+        numpad_speed as u64,
         Numrow3Key,
         // DownKey,
         keyboard::Key::Down,
@@ -399,7 +417,7 @@ fn main() {
         1,
         1,
     );
-    MouseKeyLowerLeft.rat_mode(
+    MouseKeyLowerLeft.rat_modes(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -410,6 +428,7 @@ fn main() {
         fast_arrow_speed as u64,
         medium_arrow_speed as u64,
         slow_arrow_speed as u64,
+        numpad_speed as u64,
         Numrow1Key,
         // DownKey,
         keyboard::Key::Down,
@@ -430,17 +449,34 @@ fn main() {
                 .replace(Box::new(false));
     }));
 
-    MouseKeySlow.bind(enclose!((is_slow)move || {
-        is_slow.to_owned().lock().unwrap().replace(Box::new(true));
+    //TODO: also allow numpad keypresses
+    MouseKeySlow.bind(enclose!((is_slow, is_numlock_on)move || {
+        if **is_numlock_on.lock().unwrap().borrow() {
+            is_slow.to_owned().lock().unwrap().replace(Box::new(true));
+        }else{
+            EnterKey.press();
+        }
     }));
-    MouseKeySlow.release_bind(enclose!((is_slow) move||{
-        is_slow.to_owned().lock().unwrap().replace(Box::new(false));
+    MouseKeySlow.release_bind(enclose!((is_slow, is_numlock_on) move||{
+        if **is_numlock_on.lock().unwrap().borrow() {
+            is_slow.to_owned().lock().unwrap().replace(Box::new(false));
+        }else{
+            EnterKey.release();
+        }
     }));
-    MouseKeyFast.bind(enclose!((is_fast)move || {
-        is_fast.to_owned().lock().unwrap().replace(Box::new(true));
+    MouseKeyFast.bind(enclose!((is_fast, is_numlock_on)move || {
+        if **is_numlock_on.lock().unwrap().borrow() {
+            is_fast.to_owned().lock().unwrap().replace(Box::new(true));
+        }else{
+           Numrow0Key.press();
+        }
     }));
-    MouseKeyFast.release_bind(enclose!((is_fast) move||{
-        is_fast.to_owned().lock().unwrap().replace(Box::new(false));
+    MouseKeyFast.release_bind(enclose!((is_fast, is_numlock_on) move||{
+        if **is_numlock_on.lock().unwrap().borrow() {
+            is_fast.to_owned().lock().unwrap().replace(Box::new(false));
+        }else{
+            Numrow0Key.release();
+        }
     }));
 
     //toggle is numlock on each time num lock key is pressed
@@ -453,6 +489,9 @@ fn main() {
             .unwrap()
             .replace(Box::new(!cur_value));
     }));
+    //TODO: would rather allow slash to operate with rapid numlock or
+    //      something more appropriate for people with disabilities
+    //      (hold for 3 or n seconds?)
     MouseKeySlash.bind(enclose!((is_rat_on) move || {
         let cur_value = **is_rat_on.clone().lock().unwrap().borrow();
         is_rat_on
@@ -483,17 +522,15 @@ fn main() {
     );
 
     //TODO: change these names in input
-    MouseKeyClickToggle.bind(
-        enclose!((is_numlock_on, is_rat_on, left_click_toggle=>left_click_hold) move ||{
-                //hold left click. released by another left click
-                if *left_click_hold.lock().unwrap().borrow().clone() {
-                    MouseButton::LeftButton.press();
-                } else {
-                    //right
-                    MouseButton::RightButton.press();
-            }
-        }),
-    );
+    MouseKeyClickToggle.bind(enclose!((left_click_toggle=>left_click_hold) move ||{
+            //hold left click. released by another left click
+            if *left_click_hold.lock().unwrap().borrow().clone() {
+                MouseButton::LeftButton.press();
+            } else {
+                //right
+                MouseButton::RightButton.press();
+        }
+    }));
 
     handle_input_events();
 }
