@@ -31,6 +31,8 @@ Enter: hold for slow movement
 
 ./Del: toggle hold on right or left click (click to toggle out)
 
+/: toggle between rat mode or numpad mode
+
 Rattus is under active development.
 
 TODO: 
