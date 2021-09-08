@@ -5,20 +5,17 @@ use inputbot::{
 // use these to feed to Rat_Tunnel network and animate
 // motions such as lines to track tunnel cursor teleport
 use std::boxed::Box;
-use std::cell::{Cell, RefCell};
-use std::collections::HashMap;
-use std::env;
+use std::cell::RefCell;
 use std::fs::File;
 use std::io::Read;
 use std::sync::{Arc, Mutex};
 use std::thread::sleep;
 use std::time::Duration;
-use std::{self, primitive};
+use std::{self};
 
-use x11::xlib::{XGetImage, XPutImage, XStringToKeysym};
-use x11::{xinput2, xlib}; //for config file
-                          //for drawing to the screen
-use x11::xlib::XDrawLine;
+// use x11::xlib::{XGetImage, XPutImage, XStringToKeysym};
+// use x11::{xinput2, xlib};
+// use x11::xlib::XDrawLine;
 
 use uinput;
 use uinput::event::keyboard;
@@ -39,19 +36,12 @@ struct Config {
     slow_arrow_speed: i32,
     numpad_speed: i32,
 }
-//a single action of the mouse
-//TODO serialize and save these to dot file
-struct Mouse_Action {
-    //whatever the precision of the monitor is
-    location: (i64, i64),
-    is_clicked: bool,
-}
 
 // TODO: this should just be a struct with impl or a function that takes
 // keybdkey I was just trying out trait syntax and Rust inheretance.
 // this has no shared behavior potential
-trait RatMode {
-    fn rat_modes(
+trait RatMove {
+    fn rat_moves(
         self,
         is_fast: Arc<Mutex<RefCell<Box<bool>>>>,
         is_slow: Arc<Mutex<RefCell<Box<bool>>>>,
@@ -72,8 +62,8 @@ trait RatMode {
         y: i32,
     );
 }
-impl RatMode for KeybdKey {
-    fn rat_modes(
+impl RatMove for KeybdKey {
+    fn rat_moves(
         self,
         is_fast: Arc<Mutex<RefCell<Box<bool>>>>,
         is_slow: Arc<Mutex<RefCell<Box<bool>>>>,
@@ -281,7 +271,7 @@ fn main() {
     });
 
     //TODO: these should still be a macro or just one function that calls others?
-    MouseKeyUp.rat_modes(
+    MouseKeyUp.rat_moves(
         // cloning here is weird but doesnt really matter since this is config
         // and i'll take what I can get from the borrow checker
         is_fast.clone(),
@@ -302,7 +292,7 @@ fn main() {
         0,
         -1,
     );
-    MouseKeyDown.rat_modes(
+    MouseKeyDown.rat_moves(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -321,7 +311,7 @@ fn main() {
         0,
         1,
     );
-    MouseKeyLeft.rat_modes(
+    MouseKeyLeft.rat_moves(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -340,7 +330,7 @@ fn main() {
         -1,
         0,
     );
-    MouseKeyRight.rat_modes(
+    MouseKeyRight.rat_moves(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -359,7 +349,7 @@ fn main() {
         1,
         0,
     );
-    MouseKeyUpperLeft.rat_modes(
+    MouseKeyUpperLeft.rat_moves(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -379,7 +369,7 @@ fn main() {
         -1,
         -1,
     );
-    MouseKeyUpperRight.rat_modes(
+    MouseKeyUpperRight.rat_moves(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -398,7 +388,7 @@ fn main() {
         1,
         -1,
     );
-    MouseKeyLowerRight.rat_modes(
+    MouseKeyLowerRight.rat_moves(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -417,7 +407,7 @@ fn main() {
         1,
         1,
     );
-    MouseKeyLowerLeft.rat_modes(
+    MouseKeyLowerLeft.rat_moves(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -449,33 +439,32 @@ fn main() {
                 .replace(Box::new(false));
     }));
 
-    //TODO: also allow numpad keypresses
-    MouseKeySlow.bind(enclose!((is_slow, is_numlock_on)move || {
-        if **is_numlock_on.lock().unwrap().borrow() {
-            is_slow.to_owned().lock().unwrap().replace(Box::new(true));
-        }else{
+    MouseKeySlow.bind(enclose!((is_slow, is_numlock_on, is_rat_on)move || {
+        if !**is_numlock_on.lock().unwrap().borrow() && !**is_rat_on.lock().unwrap().borrow() {
             EnterKey.press();
+        }else{
+            is_slow.to_owned().lock().unwrap().replace(Box::new(true));
         }
     }));
-    MouseKeySlow.release_bind(enclose!((is_slow, is_numlock_on) move||{
-        if **is_numlock_on.lock().unwrap().borrow() {
-            is_slow.to_owned().lock().unwrap().replace(Box::new(false));
-        }else{
+    MouseKeySlow.release_bind(enclose!((is_slow, is_numlock_on,is_rat_on) move||{
+        if !**is_numlock_on.lock().unwrap().borrow() && !**is_rat_on.lock().unwrap().borrow() {
             EnterKey.release();
+        }else{
+            is_slow.to_owned().lock().unwrap().replace(Box::new(false));
         }
     }));
-    MouseKeyFast.bind(enclose!((is_fast, is_numlock_on)move || {
-        if **is_numlock_on.lock().unwrap().borrow() {
-            is_fast.to_owned().lock().unwrap().replace(Box::new(true));
-        }else{
+    MouseKeyFast.bind(enclose!((is_fast, is_numlock_on, is_rat_on)move || {
+        if !**is_numlock_on.lock().unwrap().borrow() && !**is_rat_on.lock().unwrap().borrow() {
            Numrow0Key.press();
+        }else{
+            is_fast.to_owned().lock().unwrap().replace(Box::new(true));
         }
     }));
-    MouseKeyFast.release_bind(enclose!((is_fast, is_numlock_on) move||{
-        if **is_numlock_on.lock().unwrap().borrow() {
-            is_fast.to_owned().lock().unwrap().replace(Box::new(false));
-        }else{
+    MouseKeyFast.release_bind(enclose!((is_fast, is_numlock_on, is_rat_on) move||{
+        if !**is_numlock_on.lock().unwrap().borrow() && !**is_rat_on.lock().unwrap().borrow() {
             Numrow0Key.release();
+        }else{
+            is_fast.to_owned().lock().unwrap().replace(Box::new(false));
         }
     }));
 
