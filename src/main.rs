@@ -88,35 +88,29 @@ impl RatMove for KeybdKey {
             while self.is_pressed() {
                 let is_slow = *is_slow.lock().unwrap().borrow().clone();
                 let is_fast = *is_fast.lock().unwrap().borrow().clone();
+
                 if *is_rat_on.lock().unwrap().borrow().clone() {
-                    //TODO: slow mode with mixing using plus key
-                    //move up with fast or slow speed
+                    //fallthrough move with medium speed
+                    let mut speed = medium_speed;
+                    //move with fast or slow speed
                     if is_fast && is_slow {
-                        //move up with fast speed
-                        MouseCursor::move_abs(x, y);
-                        sleep(Duration::from_micros(
-                            (medium_speed - fast_speed) / 2 as u64,
-                        ));
+                        //move with fast speed
+                        speed = (slow_speed - fast_speed) / 2;
                     } else if is_fast {
-                        //move up with slow speed
-                        MouseCursor::move_abs(x, y);
-                        sleep(Duration::from_micros(fast_speed as u64));
+                        //move with slow speed
+                        speed = fast_speed;
                     } else if is_slow {
-                        //move up with slow speed
-                        MouseCursor::move_abs(x, y);
-                        sleep(Duration::from_micros(slow_speed as u64));
-                    } else {
-                        //move up with medium speed
-                        MouseCursor::move_abs(x, y);
-                        sleep(Duration::from_micros(medium_speed as u64));
+                        //move with slow speed
+                        speed = slow_speed;
                     }
+
+                    MouseCursor::move_abs(x, y);
+                    sleep(Duration::from_micros(speed as u64));
                 } else if *is_numlock_on.lock().unwrap().borrow().clone() {
                     //TODO: move all non mouse modes into a bind+release_bind paradigm
                     //TODO: consider not using uinput since stream buffer seems to have delay,
                     //      what does xlib have native support for?
                     //TODO: consolidate this with inputbot in a way that is contributable
-                    //TODO: arrow and numpad speed params
-                    //TODO: hold ins/ent for n presses fast and slow mode based on speed
                     let mut arrow_speed = medium_arrow_speed;
                     if is_fast && is_slow {
                         arrow_speed = (medium_arrow_speed - fast_arrow_speed) / 2;
@@ -142,9 +136,8 @@ impl RatMove for KeybdKey {
                     }
                 } else {
                     //press and release arrow with medium speed
-                    // mode_keypad.click(Duration::from_micros(medium_speed as u64));
-                    //TODO: add the rest of keypad in
-                    // mode_keypad.click(Duration::from_micros(10 as u64));
+                    //TODO: add the rest of keypad in such aas + etc
+                    //TODO: numpad speed params
                     mode_keypad.press();
                     sleep(Duration::from_micros(numpad_speed as u64));
                     mode_keypad.release();
