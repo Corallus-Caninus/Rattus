@@ -1,3 +1,6 @@
+use Rattus::BindRecord;
+use Rattus::MouseAction;
+
 use inputbot::{
     self, handle_input_events, KeySequence, KeybdKey::*, MouseButton::*, MouseCursor, *,
 };
@@ -40,8 +43,8 @@ struct Config {
 // TODO: this should just be a struct with impl or a function that takes
 // keybdkey I was just trying out trait syntax and Rust inheretance.
 // this has no shared behavior potential
-trait RatMove {
-    fn rat_moves(
+trait RatMoves {
+    fn rat_move(
         self,
         is_fast: Arc<Mutex<RefCell<Box<bool>>>>,
         is_slow: Arc<Mutex<RefCell<Box<bool>>>>,
@@ -57,13 +60,14 @@ trait RatMove {
         mode_keypad: KeybdKey,
         // mode_arrow: KeybdKey,
         mode_arrow: keyboard::Key,
-        mode_alt_arrow: Option<keyboard::Key>,
+        mode_arrow_diagonal: Option<keyboard::Key>,
         x: i32,
         y: i32,
+        history: Arc<Mutex<RefCell<Vec<MouseAction>>>>,
     );
 }
-impl RatMove for KeybdKey {
-    fn rat_moves(
+impl RatMoves for KeybdKey {
+    fn rat_move(
         self,
         is_fast: Arc<Mutex<RefCell<Box<bool>>>>,
         is_slow: Arc<Mutex<RefCell<Box<bool>>>>,
@@ -79,71 +83,75 @@ impl RatMove for KeybdKey {
         mode_keypad: KeybdKey,
         // mode_arrow: KeybdKey,
         mode_arrow: keyboard::Key,
-        mode_alt_arrow: Option<keyboard::Key>,
+        mode_arrow_diagonal: Option<keyboard::Key>,
         x: i32,
         y: i32,
+        history: Arc<Mutex<RefCell<Vec<MouseAction>>>>,
     ) {
         //TODO bind with release instead of while pressed not all keys and keyboards support this
-        self.bind(move || {
-            while self.is_pressed() {
-                let is_slow = *is_slow.lock().unwrap().borrow().clone();
-                let is_fast = *is_fast.lock().unwrap().borrow().clone();
+        self.bind_rec(
+            move || {
+                while self.is_pressed() {
+                    let is_slow = *is_slow.lock().unwrap().borrow().clone();
+                    let is_fast = *is_fast.lock().unwrap().borrow().clone();
 
-                if *is_rat_on.lock().unwrap().borrow().clone() {
-                    //fallthrough move with medium speed
-                    let mut speed = medium_speed;
-                    //move with fast or slow speed
-                    if is_fast && is_slow {
-                        //move with fast speed
-                        speed = (slow_speed - fast_speed) / 2;
-                    } else if is_fast {
-                        //move with slow speed
-                        speed = fast_speed;
-                    } else if is_slow {
-                        //move with slow speed
-                        speed = slow_speed;
-                    }
+                    if *is_rat_on.lock().unwrap().borrow().clone() {
+                        //fallthrough move with medium speed
+                        let mut speed = medium_speed;
+                        //move with fast or slow speed
+                        if is_fast && is_slow {
+                            //move with fast speed
+                            speed = (slow_speed - fast_speed) / 2;
+                        } else if is_fast {
+                            //move with slow speed
+                            speed = fast_speed;
+                        } else if is_slow {
+                            //move with slow speed
+                            speed = slow_speed;
+                        }
 
-                    MouseCursor::move_abs(x, y);
-                    sleep(Duration::from_micros(speed as u64));
-                } else if *is_numlock_on.lock().unwrap().borrow().clone() {
-                    //TODO: move all non mouse modes into a bind+release_bind paradigm
-                    //TODO: consider not using uinput since stream buffer seems to have delay,
-                    //      what does xlib have native support for?
-                    //TODO: consolidate this with inputbot in a way that is contributable
-                    let mut arrow_speed = medium_arrow_speed;
-                    if is_fast && is_slow {
-                        arrow_speed = (medium_arrow_speed - fast_arrow_speed) / 2;
-                    } else if is_fast {
-                        arrow_speed = fast_arrow_speed;
-                    } else if is_slow {
-                        arrow_speed = slow_arrow_speed;
-                    }
+                        MouseCursor::move_abs(x, y);
+                        sleep(Duration::from_micros(speed as u64));
+                    } else if *is_numlock_on.lock().unwrap().borrow().clone() {
+                        //TODO: move all non mouse modes into a bind+release_bind paradigm
+                        //TODO: consider not using uinput since stream buffer seems to have delay,
+                        //      what does xlib have native support for?
+                        //TODO: consolidate this with inputbot in a way that is contributable
+                        let mut arrow_speed = medium_arrow_speed;
+                        if is_fast && is_slow {
+                            arrow_speed = (medium_arrow_speed - fast_arrow_speed) / 2;
+                        } else if is_fast {
+                            arrow_speed = fast_arrow_speed;
+                        } else if is_slow {
+                            arrow_speed = slow_arrow_speed;
+                        }
 
-                    if mode_alt_arrow.is_none() {
-                        KEYBD_DEVICE.lock().unwrap().click(&mode_arrow).unwrap();
-                        KEYBD_DEVICE.lock().unwrap().synchronize().unwrap();
-                        sleep(Duration::from_micros(arrow_speed as u64));
+                        if mode_arrow_diagonal.is_none() {
+                            KEYBD_DEVICE.lock().unwrap().click(&mode_arrow).unwrap();
+                            KEYBD_DEVICE.lock().unwrap().synchronize().unwrap();
+                            sleep(Duration::from_micros(arrow_speed as u64));
+                        } else {
+                            KEYBD_DEVICE
+                                .lock()
+                                .unwrap()
+                                .click(&mode_arrow_diagonal.unwrap())
+                                .unwrap();
+                            KEYBD_DEVICE.lock().unwrap().click(&mode_arrow).unwrap();
+                            KEYBD_DEVICE.lock().unwrap().synchronize().unwrap();
+                            sleep(Duration::from_micros(arrow_speed as u64));
+                        }
                     } else {
-                        KEYBD_DEVICE
-                            .lock()
-                            .unwrap()
-                            .click(&mode_alt_arrow.unwrap())
-                            .unwrap();
-                        KEYBD_DEVICE.lock().unwrap().click(&mode_arrow).unwrap();
-                        KEYBD_DEVICE.lock().unwrap().synchronize().unwrap();
-                        sleep(Duration::from_micros(arrow_speed as u64));
+                        //press and release arrow with medium speed
+                        //TODO: add the rest of keypad in such aas + etc
+                        //TODO: numpad speed params
+                        mode_keypad.press();
+                        sleep(Duration::from_micros(numpad_speed as u64));
+                        mode_keypad.release();
                     }
-                } else {
-                    //press and release arrow with medium speed
-                    //TODO: add the rest of keypad in such aas + etc
-                    //TODO: numpad speed params
-                    mode_keypad.press();
-                    sleep(Duration::from_micros(numpad_speed as u64));
-                    mode_keypad.release();
                 }
-            }
-        });
+            },
+            history,
+        );
     }
 }
 
@@ -179,17 +187,14 @@ fn main() {
     );
 
     //the history buffer of mouse clicks and current location
-    // let mut history = vec![];
+    let mut history = Arc::new(Mutex::new(RefCell::new(vec![])));
     //the stored procedures of the mouse where keys are 1-9 and values are
     //vectors of postitions and possible clicks
     // let mut robots = HashMap::new();
 
-    //using Arc Mutex Refcell isnt ideal but its still fast and NKRO complete. would prefer lifetime only but needs sync
     let left_click_toggle = Arc::new(Mutex::new(RefCell::new(Box::new(true))));
 
     //create is_fast for up down left right and all diagonals
-    //NOTE: NKRO locks this on mutex: if two or more buttons are pressed at the same time as is_fast is toggled.
-    //      not a big deal.
     let is_fast = Arc::new(Mutex::new(RefCell::new(Box::new(false))));
     let is_slow = Arc::new(Mutex::new(RefCell::new(Box::new(false))));
 
@@ -264,7 +269,7 @@ fn main() {
     });
 
     //TODO: these should still be a macro or just one function that calls others?
-    MouseKeyUp.rat_moves(
+    MouseKeyUp.rat_move(
         // cloning here is weird but doesnt really matter since this is config
         // and i'll take what I can get from the borrow checker
         is_fast.clone(),
@@ -284,8 +289,9 @@ fn main() {
         None,
         0,
         -1,
+        history.clone(),
     );
-    MouseKeyDown.rat_moves(
+    MouseKeyDown.rat_move(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -303,8 +309,9 @@ fn main() {
         None,
         0,
         1,
+        history.clone(),
     );
-    MouseKeyLeft.rat_moves(
+    MouseKeyLeft.rat_move(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -322,8 +329,9 @@ fn main() {
         None,
         -1,
         0,
+        history.clone(),
     );
-    MouseKeyRight.rat_moves(
+    MouseKeyRight.rat_move(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -341,8 +349,9 @@ fn main() {
         None,
         1,
         0,
+        history.clone(),
     );
-    MouseKeyUpperLeft.rat_moves(
+    MouseKeyUpperLeft.rat_move(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -361,8 +370,9 @@ fn main() {
         Some(keyboard::Key::Left),
         -1,
         -1,
+        history.clone(),
     );
-    MouseKeyUpperRight.rat_moves(
+    MouseKeyUpperRight.rat_move(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -380,8 +390,9 @@ fn main() {
         Some(keyboard::Key::Right),
         1,
         -1,
+        history.clone(),
     );
-    MouseKeyLowerRight.rat_moves(
+    MouseKeyLowerRight.rat_move(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -399,8 +410,9 @@ fn main() {
         Some(keyboard::Key::Right),
         1,
         1,
+        history.clone(),
     );
-    MouseKeyLowerLeft.rat_moves(
+    MouseKeyLowerLeft.rat_move(
         is_fast.clone(),
         is_slow.clone(),
         is_rat_on.clone(),
@@ -418,6 +430,7 @@ fn main() {
         Some(keyboard::Key::Left),
         -1,
         1,
+        history.clone(),
     );
 
     NumpadPlusKey.bind(enclose!((left_click_toggle=> right_click_toggle) move || {
@@ -484,7 +497,7 @@ fn main() {
     }));
 
     //Numpad5Key.bind(|| {
-    MouseKeyMiddle.bind(
+    MouseKeyMiddle.bind_rec(
         enclose!((is_numlock_on, is_rat_on, left_click_toggle) move || {
                 //toggle left click
                 if **is_rat_on.clone().lock().unwrap().borrow() {
@@ -501,9 +514,11 @@ fn main() {
                     &KEYBD_DEVICE.lock().unwrap().release(&keyboard::Key::_5).unwrap();
                 }
         }),
+        history,
     );
 
     //TODO: change these names in input
+    //TODO: only toggle this in rat mode
     MouseKeyClickToggle.bind(enclose!((left_click_toggle=>left_click_hold) move ||{
             //hold left click. released by another left click
             if *left_click_hold.lock().unwrap().borrow().clone() {
