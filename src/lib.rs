@@ -19,11 +19,12 @@ use x11::xlib::Mod1MapIndex;
 
 //import file for writting MouseActions
 use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
 //TODO serialize and save these to dot file
 ///a single action of the mouse
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub struct MouseAction {
     //whatever the precision of the monitor is
     pub location: (i32, i32),
@@ -70,18 +71,10 @@ impl BindRecord for KeybdKey {
             history.to_owned().lock().unwrap().borrow_mut().push(cur_action);
             //print history using inspect
             //TODO: write less and put a cap on in memory size at some point
-            let mut file = File::create("rat_nest").unwrap();
-            history
-                .to_owned()
-                .lock()
-                .unwrap()
-                .borrow()
-                .iter()
-                .for_each(|action| {
-                    let mut line = format!("{},{},{}", action.location.0, action.location.1, action.is_clicked as u8);
-                    line.push_str("\n");
-                    file.write_all(line.as_bytes()).unwrap();
-                });
+            // let mut file = File::create("rat_nest").unwrap();
+            let mut file = OpenOptions::new().write(true).append(true).open("rat_nest").unwrap();
+            file.write_all(format!("{},{},{} \n", cur_action.location.0, cur_action.location.1, cur_action.is_clicked as u8)
+            .as_bytes()).unwrap();
         }));
     }
 
