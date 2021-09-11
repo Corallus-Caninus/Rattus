@@ -69,6 +69,7 @@ impl BindRecord for KeybdKey {
             };
             history.to_owned().lock().unwrap().borrow_mut().push(cur_action);
             //print history using inspect
+            //TODO: write less and put a cap on in memory size at some point
             let mut file = File::create("rat_nest").unwrap();
             history
                 .to_owned()
@@ -77,11 +78,10 @@ impl BindRecord for KeybdKey {
                 .borrow()
                 .iter()
                 .for_each(|action| {
-                    let mut line = format!("{:?}", action);
+                    let mut line = format!("{},{},{}", action.location.0, action.location.1, action.is_clicked as u8);
                     line.push_str("\n");
                     file.write_all(line.as_bytes()).unwrap();
                 });
-            // file.sync_all().unwrap();
         }));
     }
 
