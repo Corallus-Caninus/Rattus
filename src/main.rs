@@ -8,10 +8,13 @@ use inputbot::{
 // use these to feed to Rat_Tunnel network and animate
 // motions such as lines to track tunnel cursor teleport
 use std::boxed::Box;
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::fs::File;
 use std::io::Read;
-use std::sync::{Arc, Mutex};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc, Mutex, RwLock,
+};
 use std::thread::sleep;
 use std::time::Duration;
 use std::{self};
@@ -46,10 +49,10 @@ struct Config {
 trait RatMoves {
     fn rat_move(
         self,
-        is_fast: Arc<Mutex<RefCell<Box<bool>>>>,
-        is_slow: Arc<Mutex<RefCell<Box<bool>>>>,
-        is_rat_on: Arc<Mutex<RefCell<Box<bool>>>>,
-        is_numlock_on: Arc<Mutex<RefCell<Box<bool>>>>,
+        is_fast: Arc<AtomicBool>,
+        is_slow: Arc<AtomicBool>,
+        is_rat_on: Arc<AtomicBool>,
+        is_numlock_on: Arc<AtomicBool>,
         fast_speed: u64,
         medium_speed: u64,
         slow_speed: u64,
@@ -69,10 +72,11 @@ trait RatMoves {
 impl RatMoves for KeybdKey {
     fn rat_move(
         self,
-        is_fast: Arc<Mutex<RefCell<Box<bool>>>>,
-        is_slow: Arc<Mutex<RefCell<Box<bool>>>>,
-        is_rat_on: Arc<Mutex<RefCell<Box<bool>>>>,
-        is_numlock_on: Arc<Mutex<RefCell<Box<bool>>>>,
+        // is_fast: Arc<Mutex<RefCell<Box<bool>>>>,
+        is_fast: Arc<AtomicBool>,
+        is_slow: Arc<AtomicBool>,
+        is_rat_on: Arc<AtomicBool>,
+        is_numlock_on: Arc<AtomicBool>,
         fast_speed: u64,
         medium_speed: u64,
         slow_speed: u64,
@@ -90,39 +94,37 @@ impl RatMoves for KeybdKey {
     ) {
         //TODO bind with release instead of while pressed not all keys and keyboards support this
         self.bind_rec(
-            move || {
+            enclose!((is_fast, is_slow, is_rat_on, is_numlock_on)move || {
                 while self.is_pressed() {
-                    let is_slow = *is_slow.lock().unwrap().borrow().clone();
-                    let is_fast = *is_fast.lock().unwrap().borrow().clone();
 
-                    if *is_rat_on.lock().unwrap().borrow().clone() {
+                    if is_rat_on.load(Ordering::SeqCst) {
                         //fallthrough move with medium speed
                         let mut speed = medium_speed;
                         //move with fast or slow speed
-                        if is_fast && is_slow {
+                        if is_fast.load(Ordering::SeqCst) && is_slow.load(Ordering::SeqCst) {
                             //move with fast speed
-                            speed = (slow_speed - fast_speed) / 2;
-                        } else if is_fast {
+                            speed = (medium_speed - fast_speed) / 2;
+                        } else if is_fast.load(Ordering::SeqCst) {
                             //move with slow speed
                             speed = fast_speed;
-                        } else if is_slow {
+                        } else if is_slow.load(Ordering::SeqCst) {
                             //move with slow speed
                             speed = slow_speed;
                         }
 
                         MouseCursor::move_abs(x, y);
                         sleep(Duration::from_micros(speed as u64));
-                    } else if *is_numlock_on.lock().unwrap().borrow().clone() {
+                    }else if is_numlock_on.load(Ordering::SeqCst) {
                         //TODO: move all non mouse modes into a bind+release_bind paradigm
                         //TODO: consider not using uinput since stream buffer seems to have delay,
                         //      what does xlib have native support for?
                         //TODO: consolidate this with inputbot in a way that is contributable
                         let mut arrow_speed = medium_arrow_speed;
-                        if is_fast && is_slow {
+                        if is_fast.load(Ordering::SeqCst) && is_slow.load(Ordering::SeqCst) {
                             arrow_speed = (medium_arrow_speed - fast_arrow_speed) / 2;
-                        } else if is_fast {
+                        } else if is_fast.load(Ordering::SeqCst) {
                             arrow_speed = fast_arrow_speed;
-                        } else if is_slow {
+                        } else if is_slow.load(Ordering::SeqCst) {
                             arrow_speed = slow_arrow_speed;
                         }
 
@@ -149,7 +151,10 @@ impl RatMoves for KeybdKey {
                         mode_keypad.release();
                     }
                 }
-            },
+            }),
+            is_fast.clone(),
+            is_slow.clone(),
+            is_rat_on.clone(),
             history,
         );
     }
@@ -187,7 +192,7 @@ fn main() {
     );
 
     //the history buffer of mouse clicks and current location
-    let mut history = Arc::new(Mutex::new(RefCell::new(vec![])));
+    let history = Arc::new(Mutex::new(RefCell::new(vec![])));
     //the stored procedures of the mouse where keys are 1-9 and values are
     //vectors of postitions and possible clicks
     // let mut robots = HashMap::new();
@@ -195,12 +200,16 @@ fn main() {
     let left_click_toggle = Arc::new(Mutex::new(RefCell::new(Box::new(true))));
 
     //create is_fast for up down left right and all diagonals
-    let is_fast = Arc::new(Mutex::new(RefCell::new(Box::new(false))));
-    let is_slow = Arc::new(Mutex::new(RefCell::new(Box::new(false))));
+    // let is_fast = Arc::new(Mutex::new(Cell::new(false)));
+    // let is_slow = Arc::new(Mutex::new(Cell::new(false)));
+    let is_fast = Arc::new(AtomicBool::new(false));
+    let is_slow = Arc::new(AtomicBool::new(false));
 
     // TODO: force this to sync with numlock on initialization or (preferably) keep led in sync otherwise
-    let is_numlock_on = Arc::new(Mutex::new(RefCell::new(Box::new(true))));
-    let is_rat_on = Arc::new(Mutex::new(RefCell::new(Box::new(true))));
+    // let is_numlock_on = Arc::new(Mutex::new(RefCell::new(Box::new(true))));
+    // let is_rat_on = Arc::new(Mutex::new(RefCell::new(Box::new(true))));
+    let is_numlock_on = Arc::new(AtomicBool::new(true));
+    let is_rat_on = Arc::new(AtomicBool::new(true));
 
     //  Num_Lock can't keep up so we need to write our own stateful modes using different toggle keys
     let mut awaits = vec![];
@@ -446,61 +455,53 @@ fn main() {
     }));
 
     MouseKeySlow.bind(enclose!((is_slow, is_numlock_on, is_rat_on)move || {
-        if !**is_numlock_on.lock().unwrap().borrow() && !**is_rat_on.lock().unwrap().borrow() {
+        if !is_numlock_on.load(Ordering::SeqCst) && !is_rat_on.load(Ordering::SeqCst) {
             EnterKey.press();
         }else{
-            is_slow.to_owned().lock().unwrap().replace(Box::new(true));
+            is_slow.swap(true, Ordering::SeqCst);
         }
     }));
     MouseKeySlow.release_bind(enclose!((is_slow, is_numlock_on,is_rat_on) move||{
-        if !**is_numlock_on.lock().unwrap().borrow() && !**is_rat_on.lock().unwrap().borrow() {
+        if !is_numlock_on.load(Ordering::SeqCst) && !is_rat_on.load(Ordering::SeqCst) {
             EnterKey.release();
         }else{
-            is_slow.to_owned().lock().unwrap().replace(Box::new(false));
+            is_slow.swap(false, Ordering::SeqCst);
         }
     }));
     MouseKeyFast.bind(enclose!((is_fast, is_numlock_on, is_rat_on)move || {
-        if !**is_numlock_on.lock().unwrap().borrow() && !**is_rat_on.lock().unwrap().borrow() {
+        if !is_numlock_on.load(Ordering::SeqCst) && !is_rat_on.load(Ordering::SeqCst) {
            Numrow0Key.press();
         }else{
-            is_fast.to_owned().lock().unwrap().replace(Box::new(true));
+            is_fast.swap(true, Ordering::SeqCst);
         }
     }));
     MouseKeyFast.release_bind(enclose!((is_fast, is_numlock_on, is_rat_on) move||{
-        if !**is_numlock_on.lock().unwrap().borrow() && !**is_rat_on.lock().unwrap().borrow() {
+        if !is_numlock_on.load(Ordering::SeqCst) && !is_rat_on.load(Ordering::SeqCst) {
             Numrow0Key.release();
         }else{
-            is_fast.to_owned().lock().unwrap().replace(Box::new(false));
+            is_fast.swap(false, Ordering::SeqCst);
         }
     }));
 
     //toggle is numlock on each time num lock key is pressed
     // MouseKeyActivate.bind(move || {
     MouseKeyNumlock.bind(enclose!((is_numlock_on)move || {
-        let cur_value = **is_numlock_on.clone().lock().unwrap().borrow();
-        is_numlock_on
-            .to_owned()
-            .lock()
-            .unwrap()
-            .replace(Box::new(!cur_value));
+        let cur_value = is_numlock_on.load(Ordering::SeqCst);
+        is_numlock_on.swap(!cur_value, Ordering::SeqCst);
     }));
     //TODO: would rather allow slash to operate with rapid numlock or
     //      something more appropriate for people with disabilities
     //      (hold for 3 or n seconds?)
     MouseKeySlash.bind(enclose!((is_rat_on) move || {
-        let cur_value = **is_rat_on.clone().lock().unwrap().borrow();
-        is_rat_on
-            .to_owned()
-            .lock()
-            .unwrap()
-            .replace(Box::new(!cur_value));
+        let cur_value = is_rat_on.load(Ordering::SeqCst);
+        is_rat_on.swap(!cur_value, Ordering::SeqCst);
     }));
 
     //Numpad5Key.bind(|| {
     MouseKeyMiddle.bind_rec(
         enclose!((is_numlock_on, is_rat_on, left_click_toggle) move || {
                 //toggle left click
-                if **is_rat_on.clone().lock().unwrap().borrow() {
+                if is_rat_on.load(Ordering::SeqCst) {
                     MouseButton::LeftButton.press();
                     sleep(Duration::from_micros(click_speed as u64));
                     MouseButton::LeftButton.release();
@@ -509,11 +510,14 @@ fn main() {
                         .lock()
                         .unwrap()
                         .replace(Box::new(true));
-                } else if !**is_numlock_on.clone().lock().unwrap().borrow() {
+                } else if !is_numlock_on.load(Ordering::SeqCst) {
                     &KEYBD_DEVICE.lock().unwrap().press(&keyboard::Key::_5).unwrap();
                     &KEYBD_DEVICE.lock().unwrap().release(&keyboard::Key::_5).unwrap();
                 }
         }),
+        is_fast.clone(),
+        is_slow.clone(),
+        is_rat_on.clone(),
         history,
     );
 
