@@ -30,7 +30,7 @@ half = "1.7.1"
 
 inputbot = { git = "https://github.com/Corallus-Caninus/inputbot.git", branch = "develop" }
 
-[dependencies.inputbot]
+#[dependencies.inputbot]
 #path = "../InputBot"
 # [dependencies.tensorflow]
 # path = "../Tensorflow-Rust/rust"
