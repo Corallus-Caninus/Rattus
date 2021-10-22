@@ -28,7 +28,7 @@ half = "1.7.1"
 # TODO: feature = rat_brain
 #TODO: graphical plotting with ratbrain either Tensorboard or something native
 
-inputbot = { git = "https://github.com/Corallus-Caninus/inputbot.git", branch = "develop" }
+inputbot = { git = "https://github.com/Corallus-Caninus/inputbot.git" }
 
 #[dependencies.inputbot]
 #path = "../InputBot"
