@@ -26,13 +26,11 @@ rand = "0.8.4"
 half = "1.7.1"
 
 # TODO: feature = rat_brain
-#TODO: this is a dependency for tests only. do a feature tag or something and work on a 
-#      build system moreover (feature rat_brain etc).
-# plotters = "0.3.1"
+#TODO: graphical plotting with ratbrain either Tensorboard or something native
 
-#inputbot = { git = "https://github.com/Corallus-Caninus/inputbot.git", branch = "develop" }
+inputbot = { git = "https://github.com/Corallus-Caninus/inputbot.git", branch = "develop" }
 
 [dependencies.inputbot]
-path = "../InputBot"
+#path = "../InputBot"
 # [dependencies.tensorflow]
 # path = "../Tensorflow-Rust/rust"
