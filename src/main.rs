@@ -43,8 +43,28 @@ struct Config {
   numpad_speed: i32,
 }
 
-//TODO: factory function to implement defaults for this extension trait
-//      inline lambda for default values? given all the arcs this might make sense
+#[derive(Default, builder(default))]
+struct move_event{
+  //TODO: defaults
+  is_fast: Arc<AtomicBool>,
+  is_slow: Arc<AtomicBool>,
+  is_rat_on: Arc<AtomicBool>,
+  is_numlock_on: Arc<AtomicBool>,
+  fast_speed: u64,
+  medium_speed: u64,
+  slow_speed: u64,
+  fast_arrow_speed: u64,
+  medium_arrow_speed: u64,
+  slow_arrow_speed: u64,
+  numpad_speed: u64,
+  mode_keypad: KeybdKey,
+  mode_arrow: keyboard::Key,
+  mode_arrow_diagonal: Option<keyboard::Key>,
+  x: i32,
+  y: i32,
+  history: Arc<Mutex<RefCell<Vec<MouseAction>>>>,
+}
+//TODO: derive builder(default)
 trait RatMoves {
   fn rat_move(
     self,
@@ -68,6 +88,7 @@ trait RatMoves {
     history: Arc<Mutex<RefCell<Vec<MouseAction>>>>,
   );
 }
+//TODO: this should be builder, make a seperate struct rat_config and pass it here (the struct has a builder)
 impl RatMoves for KeybdKey {
   fn rat_move(
     self,
