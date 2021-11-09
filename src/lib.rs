@@ -8,7 +8,6 @@ pub mod data_logger {
   };
   use serde::Serialize;
   use serde_derive::{Deserialize, Serialize};
-  use x11::xlib::Mod1MapIndex;
   //import refcell
   use std::cell::{Cell, RefCell};
   //import arc
@@ -22,8 +21,9 @@ pub mod data_logger {
   //import file for writting MouseActions
   use std::fs::File;
   use std::fs::OpenOptions;
+  //import Error for windows
   use std::io::Error;
-  use std::io::Read;
+  use std::os::windows::io::*;
   use std::io::Write;
   use std::io::{self, BufRead};
 
@@ -89,11 +89,11 @@ pub mod data_logger {
 
             spawn(enclose!((cur_key, is_fast, is_slow,is_rat_on, history)move || {
             let mut is_clicked = false;
-            if u64::from(cur_key.to_owned()) == u64::from(KeybdKey::MouseKeyMiddle) {
+            if u64::from(cur_key.to_owned()) == u64::from(KeybdKey::Numpad5Key) {
                 //this was a click
                 is_clicked = true;
             }
-            let position = inputbot::MouseCursor::get_pos_abs();
+            let position = inputbot::MouseCursor::pos();
 
             //now get cursor location
             let cur_action = MouseAction {
@@ -106,6 +106,15 @@ pub mod data_logger {
             history.to_owned().lock().unwrap().borrow_mut().push(cur_action);
             //TODO: write less and put a cap on in memory size at some point
             let mut file = OpenOptions::new().write(true).append(true).open("rat_nest").unwrap();
+            // file.write_all(format!("{},{},{},{},{},{} \n",
+            //     cur_action.location.0,
+            //     cur_action.location.1,
+            //     cur_action.is_clicked as u8,
+            //     cur_action.is_fast as u8,
+            //     cur_action.is_slow as u8,
+            //     cur_action.is_rat_on as u8)
+            //     .as_bytes()).unwrap();
+            // same as above but for windows
             file.write_all(format!("{},{},{},{},{},{} \n",
                 cur_action.location.0,
                 cur_action.location.1,
@@ -134,7 +143,7 @@ pub mod data_logger {
       f();
 
       spawn(enclose!((is_fast, is_slow, is_rat_on, history) move || {
-              let position = inputbot::MouseCursor::get_pos_abs();
+              let position = inputbot::MouseCursor::pos();
 
               //now get cursor location
               let cur_action = MouseAction {
