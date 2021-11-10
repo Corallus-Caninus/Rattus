@@ -18,13 +18,6 @@ use std::thread::sleep;
 use std::time::Duration;
 use std::{self};
 
-// use x11::xlib::{XGetImage, XPutImage, XStringToKeysym};
-// use x11::{xinput2, xlib};
-// use x11::xlib::XDrawLine;
-
-// use uinput;
-// use uinput::event::keyboard;
-
 use enclose::enclose;
 use serde_derive::{Deserialize, Serialize};
 
@@ -47,6 +40,7 @@ struct Config {
 // #[derive(Default)
 // struct move_event{
 //   //TODO: defaults
+//   TODO: keybdkey instead of extension trait inheratence
 //   is_fast: Arc<AtomicBool>,
 //   is_slow: Arc<AtomicBool>,
 //   is_rat_on: Arc<AtomicBool>,
@@ -135,7 +129,12 @@ impl RatMoves for KeybdKey {
           speed = slow_speed;
       }
 
+      // TODO: yup, WMR has a seperate virtual keyboard and mouse what is windows doing....
+      // TODO: at least we can hack the popup MVR keyboard with this research
+      let x = x + MouseCursor::pos().0;
+      let  y = y + MouseCursor::pos().1;
       MouseCursor::move_abs(x, y);
+      println!("{} {}", x, y);
       sleep(Duration::from_micros(speed as u64));
       }else if is_numlock_on.load(Ordering::SeqCst) {
       //TODO: move all non mouse modes into a bind+release_bind paradigm

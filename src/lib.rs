@@ -23,9 +23,9 @@ pub mod data_logger {
   use std::fs::OpenOptions;
   //import Error for windows
   use std::io::Error;
-  use std::os::windows::io::*;
   use std::io::Write;
   use std::io::{self, BufRead};
+  use std::os::windows::io::*;
 
   ///Mouse action for data collection
   ///used in machine learning algorithms.
