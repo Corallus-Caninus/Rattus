@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use Rattus::data_logger::BindRecord;
 use Rattus::data_logger::MouseAction;
 
@@ -18,10 +20,86 @@ use std::thread::sleep;
 use std::time::Duration;
 use std::{self};
 
+
+
+use windows::UI::Input::Preview::Injection::*;
+// use windows::runtime::{IInspectable, IUnknown, IntoParam};
+// use windows::Foundation::Collections::{IIterable, IVector, VectorIterator};
+use windows_sys::Foundation::Collections::IIterable;
+use windows as Windows;
+// use windows::runtime::*;
+use windows_macros::implement;
+use windows::core::*;
+use windows::Win32::Foundation::E_BOUNDS;
+
+// use windows::Foundation::Numerics::Vector2;
+// use windows_sys::{Win32::Foundation::*, Win32::System::Threading::*, Win32::UI::WindowsAndMessaging::*};
+// use windows::core::Param::Boxed;
+// use windows::core::alloc::boxed::Box as winbox;
+
+// import anyhow
+// use anyhow::{anyhow, Result};
+
+
 use enclose::enclose;
 use serde_derive::{Deserialize, Serialize};
 
-use toml;
+
+// TODO: extract this to a crate or pr?
+#[implement(
+    Windows::Foundation::Collections::IIterator<T>,
+)]
+struct Iterator<T>
+where
+    T: RuntimeType + 'static,
+{
+    owner: Windows::Foundation::Collections::IIterable<T>,
+    current: usize,
+}
+#[allow(non_snake_case)]
+impl<T: RuntimeType + 'static> Iterator<T> {
+    fn Current(&self) -> Result<T> {
+        let owner = unsafe { Iterable::to_impl(&self.owner) };
+
+        if owner.0.len() > self.current {
+            Ok(owner.0[self.current].clone())
+        } else {
+            Err(Error::new(E_BOUNDS, "".into()))
+        }
+    }
+
+    fn HasCurrent(&self) -> Result<bool> {
+        let owner = unsafe { Iterable::to_impl(&self.owner) };
+        Ok(owner.0.len() > self.current)
+    }
+
+    fn MoveNext(&mut self) -> Result<bool> {
+        let owner = unsafe { Iterable::to_impl(&self.owner) };
+        self.current += 1;
+        Ok(owner.0.len() > self.current)
+    }
+
+    fn GetMany(&self, _items: &mut [<T as DefaultType>::DefaultType]) -> Result<u32> {
+        panic!(); // TODO: arrays still need some work.
+    }
+}
+
+
+#[implement(
+      Windows::Foundation::Collections::IIterable<T>,
+)]
+struct Iterable<T>(Vec<T>)
+where
+  T: RuntimeType + 'static;
+
+#[allow(non_snake_case)]
+impl<T: RuntimeType + 'static> Iterable<T> {
+  fn First(&mut self) -> Result<Windows::Foundation::Collections::IIterator<T>> {
+      Ok(Iterator::<T> { owner: self.into(), current: 0 }.into())
+  }
+}
+
+// use toml;
 
 //Config file Data Structure
 #[derive(Deserialize)]
@@ -35,6 +113,7 @@ struct Config {
   slow_arrow_speed: i32,
   numpad_speed: i32,
 }
+
 
 // TODO: also derive builder
 // #[derive(Default)
@@ -76,8 +155,6 @@ trait RatMoves {
     numpad_speed: u64,
     mode_keypad: KeybdKey,
     mode_arrow: KeybdKey,
-    // mode_arrow: keyboard::Key,
-    // mode_arrow_diagonal: Option<keyboard::Key>,
     mode_arrow_diagonal: Option<KeybdKey>,
     x: i32,
     y: i32,
@@ -101,9 +178,6 @@ impl RatMoves for KeybdKey {
     slow_arrow_speed: u64,
     numpad_speed: u64,
     mode_keypad: KeybdKey,
-    // mode_arrow: KeybdKey,
-    // mode_arrow: keyboard::Key,
-    // mode_arrow_diagonal: Option<keyboard::Key>,
     mode_arrow: KeybdKey,
     mode_arrow_diagonal: Option<KeybdKey>,
     x: i32,
@@ -131,15 +205,32 @@ impl RatMoves for KeybdKey {
 
       // TODO: yup, WMR has a seperate virtual keyboard and mouse what is windows doing....
       // TODO: at least we can hack the popup MVR keyboard with this research
-      let x = x + MouseCursor::pos().0;
-      let  y = y + MouseCursor::pos().1;
-      MouseCursor::move_abs(x, y);
+      // let x = x + MouseCursor::pos().0;
+      // let  y = y + MouseCursor::pos().1;
+      // MouseCursor::move_abs(x, y);
+      println!("function call"); 
+      let mouse_injection = InjectedInputMouseInfo::new().unwrap();
+      mouse_injection.SetDeltaY(y as i32).unwrap();
+      mouse_injection.SetDeltaX(x as i32).unwrap();
+      let injector = InputInjector::TryCreate().unwrap();
+
+      // injector.InjectMouseInput(mouse_injection_array).unwrap();
+      //same as above but is Iterable cast
+      let solution: Windows::Foundation::Collections::IIterable<InjectedInputMouseInfo> = Iterable(vec![mouse_injection]).into();
+      injector.InjectMouseInput(solution).unwrap();
+
+      // injector.InjectMouseInput(mouse_injection).unwrap();
+      //Same as above but with IInspectable 
+      // injector.InjectMouseInpwindows::Foundation::Collections::IIterable::from(mouse_injection)).unwrap();
+      // let source: IIterable<i32> = Iterable(vec![10, 20, 30]).into(); 
+      // create a windows vector
+      // let vec = Vector2{X: x as i32, Y: y as i32};
+      // vector.ReplaceAll(vec![10, 20, 30]).unwrap();
+
       println!("{} {}", x, y);
       sleep(Duration::from_micros(speed as u64));
       }else if is_numlock_on.load(Ordering::SeqCst) {
       //TODO: move all non mouse modes into a bind+release_bind paradigm
-      //TODO: consider not using uinput since stream buffer seems to have delay,
-      //      what does xlib have native support for?
       //TODO: consolidate this with inputbot in a way that is contributable
       //TODO: need to lock sleep since cb threads
       //      every keypress
