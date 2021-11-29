@@ -60,7 +60,6 @@ where
 impl<T: RuntimeType + 'static> Iterator<T> {
     fn Current(&self) -> Result<T> {
         let owner = unsafe { Iterable::to_impl(&self.owner) };
-
         if owner.0.len() > self.current {
             Ok(owner.0[self.current].clone())
         } else {
@@ -445,7 +444,7 @@ fn main() {
     history.clone(),
   );
   // MouseKeyUpperRight.rat_move(
-  Numrow9Key.rat_move(
+  Numpad9Key.rat_move(
     is_fast.clone(),
     is_slow.clone(),
     is_rat_on.clone(),
@@ -467,7 +466,7 @@ fn main() {
     history.clone(),
   );
   // MouseKeyLowerRight.rat_move(
-  Numrow3Key.rat_move(
+  Numpad3Key.rat_move(
     is_fast.clone(),
     is_slow.clone(),
     is_rat_on.clone(),
