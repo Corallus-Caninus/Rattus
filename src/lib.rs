@@ -83,7 +83,7 @@ pub mod data_logger {
       is_rat_on: Arc<AtomicBool>,
       history: Arc<Mutex<RefCell<Vec<MouseAction>>>>,
     ) {
-      self.bind(
+      self.block_bind(
         enclose!((self=>cur_key, is_fast, is_slow,is_rat_on, history)move || {
             f();
 
@@ -128,6 +128,7 @@ pub mod data_logger {
       );
     }
 
+    //TODO: deprecate this.
     ///bind a function to be called when the key is released
     ///and also store the action in the history buffer
     fn bind_release_rec<F: Fn() + Send + Sync + 'static>(
