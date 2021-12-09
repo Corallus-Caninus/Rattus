@@ -1,5 +1,7 @@
 # Rattus
-A modal Mouse Key meant to entirely replace the mouse Currently tested on Linux (X11 only with proprietary nvidia drivers)
+A modal Mouse Key meant to entirely replace the mouse Currently tested in Windows Mixed Reality 
+
+requires sharpkeys to set registry scancodes. please import the .skl file to sharpkeys and write to registry before running with cargo.
 
 *Keys:*
 
