@@ -301,25 +301,6 @@ fn main() {
         .unwrap();
 
     //TODO: move to polling loop
-    // NumpadDelKey.block_bind(enclose!((left_click_toggle=>left_click_hold) move ||{
-    //     //hold left click. released by another left click
-    //     if *left_click_hold.lock().unwrap().borrow().clone() {
-    //         let injector = InputInjector::TryCreate().unwrap();
-    //         let mouse_injection = InjectedInputMouseOptions::LeftDown;
-    //         let mouse_injection_solution = InjectedInputMouseInfo::new().unwrap();
-    //         mouse_injection_solution.SetMouseOptions(mouse_injection).unwrap();
-    //         let solution: Windows::Foundation::Collections::IIterable<InjectedInputMouseInfo> = Iterable(vec![mouse_injection_solution]).into();
-    //         injector.InjectMouseInput(solution.clone()).unwrap();
-    //     } else {
-    //         //right
-    //         let injector = InputInjector::TryCreate().unwrap();
-    //         let mouse_injection = InjectedInputMouseOptions::RightDown;
-    //         let mouse_injection_solution = InjectedInputMouseInfo::new().unwrap();
-    //         mouse_injection_solution.SetMouseOptions(mouse_injection).unwrap();
-    //         let solution: Windows::Foundation::Collections::IIterable<InjectedInputMouseInfo> = Iterable(vec![mouse_injection_solution]).into();
-    //         injector.InjectMouseInput(solution.clone()).unwrap();
-    //     }
-    // }));
 
     //original bindings (not blocked so we modulate with sharpkeys)
     // let Numpad9Keyi32 = 0x69;
@@ -538,10 +519,12 @@ fn main() {
             );
         }
         //TODO: seperate thread loop for non movement keys
+        //TODO: lock on the existing injector
         if Numpad5Keyi32.is_pressed() {
             //toggle left click
             if is_rat_on.load(Ordering::SeqCst) {
-                let injector = InputInjector::TryCreate().unwrap();
+                // let injector = InputInjector::TryCreate().unwrap();
+                let injector = injector.clone().lock().unwrap().0.clone();
                 let mouse_injection = InjectedInputMouseOptions::LeftDown;
                 let mouse_injection_solution = InjectedInputMouseInfo::new().unwrap();
                 mouse_injection_solution
@@ -569,7 +552,9 @@ fn main() {
                     .unwrap()
                     .replace(Box::new(true));
             } else if !is_numlock_on.load(Ordering::SeqCst) {
+                //TODO: inputbot is DEPRECATED
                 Numpad5Key.press();
+                sleep(Duration::from_micros(click_speed as u64));
                 Numpad5Key.release();
             }
             // is_fast.clone(),
@@ -579,7 +564,9 @@ fn main() {
             // );
         }
         if NumpadAddKeyi32.is_pressed() {
-            let injector = InputInjector::TryCreate().unwrap();
+            // let injector = InputInjector::TryCreate().unwrap();
+            let injector = injector.clone().lock().unwrap().0.clone();
+
             let mouse_injection = InjectedInputMouseOptions::RightDown;
             let mouse_injection_solution = InjectedInputMouseInfo::new().unwrap();
             mouse_injection_solution
@@ -599,7 +586,13 @@ fn main() {
 
             let solution: Windows::Foundation::Collections::IIterable<InjectedInputMouseInfo> =
                 Iterable(vec![mouse_injection_solution]).into();
-            injector.InjectMouseInput(solution.clone()).unwrap();
+            let res = injector.InjectMouseInput(solution.clone());
+            match res {
+                Ok(_) => {}
+                Err(e) => {
+                    //ignore
+                }
+            }
 
             left_click_toggle
                 .to_owned()
@@ -640,6 +633,63 @@ fn main() {
         if NumpadDivKeyi32.is_pressed() {
             let cur_value = is_rat_on.load(Ordering::SeqCst);
             is_rat_on.swap(!cur_value, Ordering::SeqCst);
+        }
+        // NumpadDelKey.block_bind(enclose!((left_click_toggle=>left_click_hold) move ||{
+        //     //hold left click. released by another left click
+        //     if *left_click_hold.lock().unwrap().borrow().clone() {
+        //         let injector = InputInjector::TryCreate().unwrap();
+        //         let mouse_injection = InjectedInputMouseOptions::LeftDown;
+        //         let mouse_injection_solution = InjectedInputMouseInfo::new().unwrap();
+        //         mouse_injection_solution.SetMouseOptions(mouse_injection).unwrap();
+        //         let solution: Windows::Foundation::Collections::IIterable<InjectedInputMouseInfo> = Iterable(vec![mouse_injection_solution]).into();
+        //         injector.InjectMouseInput(solution.clone()).unwrap();
+        //     } else {
+        //         //right
+        //         let injector = InputInjector::TryCreate().unwrap();
+        //         let mouse_injection = InjectedInputMouseOptions::RightDown;
+        //         let mouse_injection_solution = InjectedInputMouseInfo::new().unwrap();
+        //         mouse_injection_solution.SetMouseOptions(mouse_injection).unwrap();
+        //         let solution: Windows::Foundation::Collections::IIterable<InjectedInputMouseInfo> = Iterable(vec![mouse_injection_solution]).into();
+        //         injector.InjectMouseInput(solution.clone()).unwrap();
+        //     }
+        // }));
+        if NumpadDelKeyi32.is_pressed() {
+            if *left_click_toggle.lock().unwrap().borrow().clone() {
+                // let injector = InputInjector::TryCreate().unwrap();
+                let injector = injector.clone().lock().unwrap().0.clone();
+                let mouse_injection = InjectedInputMouseOptions::LeftDown;
+                let mouse_injection_solution = InjectedInputMouseInfo::new().unwrap();
+                mouse_injection_solution
+                    .SetMouseOptions(mouse_injection)
+                    .unwrap();
+                let solution: Windows::Foundation::Collections::IIterable<InjectedInputMouseInfo> =
+                    Iterable(vec![mouse_injection_solution]).into();
+                let res = injector.InjectMouseInput(solution.clone());
+                match res {
+                    Ok(_) => {}
+                    Err(e) => {
+                        //ignore
+                    }
+                }
+            } else {
+                //right
+                // let injector = InputInjector::TryCreate().unwrap();
+                let injector = injector.clone().lock().unwrap().0.clone();
+                let mouse_injection = InjectedInputMouseOptions::RightDown;
+                let mouse_injection_solution = InjectedInputMouseInfo::new().unwrap();
+                mouse_injection_solution
+                    .SetMouseOptions(mouse_injection)
+                    .unwrap();
+                let solution: Windows::Foundation::Collections::IIterable<InjectedInputMouseInfo> =
+                    Iterable(vec![mouse_injection_solution]).into();
+                let res = injector.InjectMouseInput(solution.clone());
+                match res {
+                    Ok(_) => {}
+                    Err(e) => {
+                        //ignore
+                    }
+                }
+            }
         }
     }
 }
