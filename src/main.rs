@@ -327,7 +327,7 @@ fn main() {
     let NumpadDivKeyi32 = 0x2F;
     let NumpadAddKeyi32 = 0x87;
     let NumLockKeyi32 = 0x90;
-    let NumpadEnterKeyi32 = 0x27 & 0xE0;
+    let NumpadEnterKeyi32 = 0x0C;
 
     loop {
         //TODO: need to rec for brain
@@ -600,14 +600,6 @@ fn main() {
                 .unwrap()
                 .replace(Box::new(false));
         }
-        if NumpadEnterKeyi32.is_pressed() {
-            if !is_numlock_on.load(Ordering::SeqCst) && !is_rat_on.load(Ordering::SeqCst) {
-                EnterKey.press();
-            } else {
-                let cur_value = is_slow.load(Ordering::SeqCst);
-                is_slow.swap(!cur_value, Ordering::SeqCst);
-            }
-        }
 
         if Numpad0Keyi32.is_pressed() {
             if !is_numlock_on.load(Ordering::SeqCst) && !is_rat_on.load(Ordering::SeqCst) {
@@ -622,6 +614,21 @@ fn main() {
             } else {
                 let cur_value = is_fast.load(Ordering::SeqCst);
                 is_fast.swap(false, Ordering::SeqCst);
+            }
+        }
+        if NumpadEnterKeyi32.is_pressed() {
+            if !is_numlock_on.load(Ordering::SeqCst) && !is_rat_on.load(Ordering::SeqCst) {
+                EnterKey.press();
+            } else {
+                let cur_value = is_slow.load(Ordering::SeqCst);
+                is_slow.swap(true, Ordering::SeqCst);
+            }
+        } else {
+            if !is_numlock_on.load(Ordering::SeqCst) && !is_rat_on.load(Ordering::SeqCst) {
+                EnterKey.release();
+            } else {
+                let cur_value = is_slow.load(Ordering::SeqCst);
+                is_slow.swap(false, Ordering::SeqCst);
             }
         }
 
