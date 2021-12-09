@@ -15,7 +15,7 @@ use std::sync::{
     Arc, Mutex,
 };
 use std::thread::sleep;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 use std::{self};
 
 use windows as Windows;
@@ -328,6 +328,7 @@ fn main() {
     let NumpadAddKeyi32 = 0x87;
     let NumLockKeyi32 = 0x90;
     let NumpadEnterKeyi32 = 0x0C;
+    let mut click_timeout = SystemTime::now();
 
     loop {
         //TODO: need to rec for brain
@@ -520,7 +521,12 @@ fn main() {
         }
         //TODO: seperate thread loop for non movement keys
         //TODO: lock on the existing injector
-        if Numpad5Keyi32.is_pressed() {
+        //TODO: cooldown for button press (different than click speed)
+        //get the time passed since last click_timeout
+        if Numpad5Keyi32.is_pressed()
+            && click_timeout.elapsed().unwrap() > Duration::from_millis(click_speed as u64)
+        {
+            click_timeout = SystemTime::now();
             //toggle left click
             if is_rat_on.load(Ordering::SeqCst) {
                 // let injector = InputInjector::TryCreate().unwrap();
@@ -563,8 +569,10 @@ fn main() {
             // history.clone(),
             // );
         }
-        if NumpadAddKeyi32.is_pressed() {
-            // let injector = InputInjector::TryCreate().unwrap();
+        if NumpadAddKeyi32.is_pressed() && click_timeout.elapsed().unwrap() > Duration::from_millis(
+            click_speed as u64,
+        ) {
+            click_timeout = SystemTime::now();
             let injector = injector.clone().lock().unwrap().0.clone();
 
             let mouse_injection = InjectedInputMouseOptions::RightDown;
