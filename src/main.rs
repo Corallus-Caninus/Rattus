@@ -217,7 +217,7 @@ impl RatMoves for KeybdKey {
             let res = injector.InjectMouseInput(solution);
 
             //this seems to be a-okay, prefer here and not in polling loop for held keys etc.
-            sleep(Duration::from_millis(1 as u64));
+            // sleep(Duration::from_millis(1 as u64));
 
             match res {
                 Ok(_) => {}
@@ -300,6 +300,225 @@ fn main() {
         .InitializeTouchInjection(InjectedInputVisualizationMode::Default)
         .unwrap();
 
+    //BEGIN EVENT HANDLE
+    // use winapi::{
+    //     ctypes::*,
+    //     shared::{minwindef::*, windef::*},
+    //     um::winuser::*,
+    // };
+    // //import lazy and atomicptr
+    // use once_cell::sync::Lazy;
+    // //import MaybeUninit;
+    // use core::ptr::null_mut;
+    // use std::mem::MaybeUninit;
+    // use std::sync::atomic::{AtomicPtr, Ordering};
+    // static KEYBD_HHOOK: Lazy<AtomicPtr<HHOOK__>> = Lazy::new(AtomicPtr::default);
+    // static MOUSE_HHOOK: Lazy<AtomicPtr<HHOOK__>> = Lazy::new(AtomicPtr::default);
+    // pub use std::{collections::hash_map::HashMap, thread::spawn};
+
+    // pub enum Bind {
+    //     NormalBind(BindHandler),
+    //     BlockBind(BlockBindHandler),
+    //     BlockableBind(BlockableBindHandler),
+    // }
+
+    // pub type BindHandler = Arc<dyn Fn() + Send + Sync + 'static>;
+    // pub type BlockBindHandler = Arc<dyn Fn() + Send + Sync + 'static>;
+    // pub type BlockableBindHandler = Arc<dyn Fn() -> BlockInput + Send + Sync + 'static>;
+    // pub type KeybdBindMap = HashMap<KeybdKeys, Bind>;
+    // pub type MouseBindMap = HashMap<MouseButton, Bind>;
+
+    // pub static KEYBD_BINDS: Lazy<Mutex<KeybdBindMap>> =
+    //     Lazy::new(|| Mutex::new(KeybdBindMap::new()));
+    // pub static MOUSE_BINDS: Lazy<Mutex<MouseBindMap>> =
+    //     Lazy::new(|| Mutex::new(MouseBindMap::new()));
+
+    // #[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
+    // pub enum KeybdKeys {
+    //     Numpad0Keys,
+    //     Numpad1Keys,
+    //     Numpad2Keys,
+    //     Numpad3Keys,
+    //     Numpad4Keys,
+    //     Numpad5Keys,
+    //     Numpad6Keys,
+    //     Numpad7Keys,
+    //     Numpad8Keys,
+    //     Numpad9Keys,
+    //     NumpadPlusKeys,
+    //     NumpadDivKeys,
+    //     NumpadDelKeys,
+    //     NumpadEnterKeys,
+    //     NumlockKeys,
+    //     OtherKey(u64),
+    // }
+    // impl From<u64> for KeybdKeys {
+    //     fn from(code: u64) -> KeybdKeys {
+    //         use KeybdKeys::*;
+    //         match code {
+    //             // let Numpad9Keyi32 = 0x69;
+    //             // let Numpad1Keyi32 = 0x61;
+    //             // let Numpad3Keyi32 = 0x63;
+    //             // let Numpad7Keyi32 = 0x67;
+    //             // let Numpad8Keyi32 = 0x68;
+    //             // let Numpad2Keyi32 = 0x62;
+    //             // let Numpad4Keyi32 = 0x64;
+    //             // let Numpad6Keyi32 = 0x66;
+    //             0x60 => Numpad0Keys,
+    //             0x61 => Numpad1Keys,
+    //             // 0x73 => Numpad1Keys,
+    //             // 0xC1 => Numpad1Keys,
+    //             0x62 => Numpad2Keys,
+    //             0x63 => Numpad3Keys,
+    //             0x64 => Numpad4Keys,
+    //             0x65 => Numpad5Keys,
+    //             0x66 => Numpad6Keys,
+    //             0x67 => Numpad7Keys,
+    //             0x68 => Numpad8Keys,
+    //             0x69 => Numpad9Keys,
+    //             0x6E => NumpadPlusKeys,
+    //             0x6F => NumpadDivKeys,
+    //             0x6A => NumpadDelKeys,
+    //             0x6D => NumpadEnterKeys,
+    //             0x90 => NumlockKeys,
+    //             _ => OtherKey(code),
+    //         }
+    //     }
+    // }
+    // impl From<KeybdKeys> for u64 {
+    //     fn from(key: KeybdKeys) -> u64 {
+    //         use KeybdKeys::*;
+    //         match key {
+    //             Numpad0Keys => 0x60,
+    //             Numpad1Keys => 0x61,
+    //             // Numpad1Keys => 0x73,
+    //             // Numpad1Keys => 0xC1,
+    //             Numpad2Keys => 0x62,
+    //             Numpad3Keys => 0x63,
+    //             Numpad4Keys => 0x64,
+    //             Numpad5Keys => 0x65,
+    //             Numpad6Keys => 0x66,
+    //             Numpad7Keys => 0x67,
+    //             Numpad8Keys => 0x68,
+    //             Numpad9Keys => 0x69,
+    //             NumpadPlusKeys => 0x6E,
+    //             NumpadDivKeys => 0x6F,
+    //             NumpadDelKeys => 0x6A,
+    //             NumpadEnterKeys => 0x6D,
+    //             NumlockKeys => 0x90,
+    //             OtherKey(code) => code,
+    //         }
+    //     }
+    // }
+    // impl KeybdKeys {
+    //     pub fn bind<F: Fn() + Send + Sync + 'static>(self, callback: F) {
+    //         KEYBD_BINDS
+    //             .lock()
+    //             .unwrap()
+    //             .insert(self, Bind::NormalBind(Arc::new(callback)));
+    //     }
+
+    //     pub fn block_bind<F: Fn() + Send + Sync + 'static>(self, callback: F) {
+    //         KEYBD_BINDS
+    //             .lock()
+    //             .unwrap()
+    //             .insert(self, Bind::BlockBind(Arc::new(callback)));
+    //     }
+
+    //     pub fn blockable_bind<F: Fn() -> BlockInput + Send + Sync + 'static>(self, callback: F) {
+    //         KEYBD_BINDS
+    //             .lock()
+    //             .unwrap()
+    //             .insert(self, Bind::BlockableBind(Arc::new(callback)));
+    //     }
+
+    //     pub fn unbind(self) {
+    //         KEYBD_BINDS.lock().unwrap().remove(&self);
+    //     }
+    // }
+
+    // pub fn handle_input_events() {
+    //     // if !MOUSE_BINDS.lock().unwrap().is_empty() {
+    //     //     set_hook(WH_MOUSE_LL, &*MOUSE_HHOOK, mouse_proc);
+    //     // };
+    //     // if !KEYBD_BINDS.lock().unwrap().is_empty() {
+    //     set_hook(WH_KEYBOARD_LL, &*KEYBD_HHOOK, keybd_proc);
+    //     // };
+    //     let mut msg: MSG = unsafe { MaybeUninit::zeroed().assume_init() };
+    //     unsafe { GetMessageW(&mut msg, 0 as HWND, 0, 0) };
+    // }
+
+    // unsafe extern "system" fn keybd_proc(code: c_int, w_param: WPARAM, l_param: LPARAM) -> LRESULT {
+    //     // if KEYBD_BINDS.lock().unwrap().is_empty() {
+    //     //     unset_hook(&*KEYBD_HHOOK);
+    //     // } else
+    //     // println!("{:?}", code);
+    //     std::thread::spawn(move || CallNextHookEx(null_mut(), code, w_param, l_param));
+    //     let res = std::thread::spawn(move || {
+    //         if w_param as u32 == WM_KEYDOWN {
+    //             // if let Some(bind) = KEYBD_BINDS
+    //             //     .lock()
+    //             //     .unwrap()
+    //             //     .get_mut(&KeybdKeys::from(u64::from(
+    //             //         (*(l_param as *const KBDLLHOOKSTRUCT)).vkCode,
+    //             let virtcode = (*(l_param as *const KBDLLHOOKSTRUCT)).vkCode;
+    //             // println!("{:?}", virtcode);
+    //             //if the virtcode is in KeybdKeys enum dont allow the key press (return 1)
+    //             match KeybdKeys::from(virtcode as u64) {
+    //                 KeybdKeys::Numpad0Keys
+    //                 | KeybdKeys::Numpad1Keys
+    //                 | KeybdKeys::Numpad2Keys
+    //                 | KeybdKeys::Numpad3Keys
+    //                 | KeybdKeys::Numpad4Keys
+    //                 | KeybdKeys::Numpad5Keys
+    //                 | KeybdKeys::Numpad6Keys
+    //                 | KeybdKeys::Numpad7Keys
+    //                 | KeybdKeys::Numpad8Keys
+    //                 | KeybdKeys::Numpad9Keys
+    //                 | KeybdKeys::NumpadPlusKeys
+    //                 | KeybdKeys::NumpadDivKeys
+    //                 | KeybdKeys::NumpadDelKeys
+    //                 | KeybdKeys::NumlockKeys
+    //                 | KeybdKeys::NumpadEnterKeys => {
+    //                     // println!("got key: {:?}", KeybdKeys::from(virtcode as u64));
+    //                     return 1;
+    //                 }
+    //                 _ => {}
+    //             }
+    //         }
+    //         return 0;
+    //     });
+    //     res.join().unwrap()
+
+    //     // //return 1 if res returned 1 else CallNextHook
+    //     // if res.join().unwrap() == 1 {
+    //     //     return 1;
+    //     // } else {
+    //     //     0
+    //     //     //     return CallNextHookEx(null_mut(), code, w_param, l_param);
+    //     // }
+    // }
+    // fn set_hook(
+    //     hook_id: i32,
+
+    //     hook_ptr: &AtomicPtr<HHOOK__>,
+    //     hook_proc: unsafe extern "system" fn(c_int, WPARAM, LPARAM) -> LRESULT,
+    // ) {
+    //     hook_ptr.store(
+    //         unsafe { SetWindowsHookExW(hook_id, Some(hook_proc), 0 as HINSTANCE, 0) },
+    //         // Ordering::Relaxed,
+    //         Ordering::SeqCst,
+    //     );
+    // }
+
+    // fn unset_hook(hook_ptr: &AtomicPtr<HHOOK__>) {
+    //     if !hook_ptr.load(Ordering::Relaxed).is_null() {
+    //         unsafe { UnhookWindowsHookEx(hook_ptr.load(Ordering::Relaxed)) };
+    //         hook_ptr.store(null_mut(), Ordering::Relaxed);
+    //     }
+    // }
+    //END EVENT HOOK
+
     //original bindings (not blocked so we modulate with sharpkeys)
     // let Numpad9Keyi32 = 0x69;
     // let Numpad1Keyi32 = 0x61;
@@ -313,6 +532,8 @@ fn main() {
     // NOTE: set with sharpkeys in windows registry
 
     // TODO: handle keypress event and block instead of mapping. less user configuration and more robust
+    //TODO: manually edit these in registry and save in project to values not available in sharpkey
+    //      (ensure there is a corresponding virtual key or create a new virtual key)
     let Numpad1Keyi32 = 0xC1;
     let Numpad2Keyi32 = 0xE9;
     let Numpad3Keyi32 = 0xFF;
@@ -328,12 +549,35 @@ fn main() {
     let NumpadAddKeyi32 = 0x87;
     let NumLockKeyi32 = 0x90;
     let NumpadEnterKeyi32 = 0x0C;
+    // let Numpad1Keyi32 = u64::from(KeybdKeys::Numpad1Keys) as i32;
+    // let Numpad2Keyi32 = u64::from(KeybdKeys::Numpad2Keys) as i32;
+    // let Numpad3Keyi32 = u64::from(KeybdKeys::Numpad3Keys) as i32;
+    // let Numpad4Keyi32 = u64::from(KeybdKeys::Numpad4Keys) as i32;
+    // let Numpad5Keyi32 = u64::from(KeybdKeys::Numpad5Keys) as i32;
+    // let Numpad6Keyi32 = u64::from(KeybdKeys::Numpad6Keys) as i32;
+    // let Numpad7Keyi32 = u64::from(KeybdKeys::Numpad7Keys) as i32;
+    // let Numpad8Keyi32 = u64::from(KeybdKeys::Numpad8Keys) as i32;
+    // let Numpad9Keyi32 = u64::from(KeybdKeys::Numpad9Keys) as i32;
+    // let Numpad0Keyi32 = u64::from(KeybdKeys::Numpad0Keys) as i32;
+    // let NumpadDelKeyi32 = u64::from(KeybdKeys::NumpadDelKeys) as i32;
+    // let NumpadDivKeyi32 = u64::from(KeybdKeys::NumpadDivKeys) as i32;
+    // let NumpadAddKeyi32 = u64::from(KeybdKeys::NumpadPlusKeys) as i32;
+    // let NumLockKeyi32 = u64::from(KeybdKeys::NumlockKeys) as i32;
+    // let NumpadEnterKeyi32 = u64::from(KeybdKeys::NumpadEnterKeys) as i32;
+
     let mut click_timeout = SystemTime::now();
+
+    // handle_input_events();
+    //fork handle_input_events to a thread
+    let handle_input_events_thread = std::thread::spawn(|| {
+        handle_input_events();
+    });
 
     // TODO: record mouse positions and clicks in history
     // TODO: scroll wheel
     loop {
-        //TODO: scheduler so this doesnt take up too many cycles
+        //scheduler frequency
+        sleep(Duration::from_millis(10));
         //TODO: need to rec for brain
         // NOTE: this has one thread so sleep doesnt have to lock a mutex to stall for speed :)
         // MouseKeyUp.rat_move(
@@ -670,7 +914,7 @@ fn main() {
             let cur_value = is_rat_on.load(Ordering::SeqCst);
             is_rat_on.swap(!cur_value, Ordering::SeqCst);
             sleep(Duration::from_millis(click_speed as u64));
-            }
+        }
         if NumpadDelKeyi32.is_pressed() {
             if *left_click_toggle.lock().unwrap().borrow().clone() {
                 // let injector = InputInjector::TryCreate().unwrap();
