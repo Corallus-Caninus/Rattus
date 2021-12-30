@@ -1,5 +1,5 @@
 # Rattus
-A modal Mouse Key meant to entirely replace the mouse Currently tested on Linux (X11 only with proprietary nvidia drivers)
+A modal Mouse Key meant to entirely replace the mouse Currently tested on Linux (X11 only with proprietary nvidia drivers) and the Windows Universal Platform (UWP) including Windows Mixed Reality. Please find the corresponding fork for your system. 
 
 *Keys:*
 
