@@ -1,4 +1,4 @@
-pub mod rat_brain;
+//pub mod rat_brain;
 
 pub mod data_logger {
   //! data logging data structures and utilities for basic data preperation from Rattus.

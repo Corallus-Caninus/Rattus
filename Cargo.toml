@@ -20,7 +20,7 @@ enclose = "1.1.8"
 toml = "0.5.8"
 serde_derive = "1.0.130"
 serde = "1.0.130"
-tensorflow = {version = "0.17.0", features = ["tensorflow_gpu"]}
+#tensorflow = {version = "0.17.0", features = ["tensorflow_gpu"]}
 rand = "0.8.4"
 half = "1.7.1"
 # windows = { version = "0.26.0", features = ["UI_Input_Preview_Injection", "Foundation_Collections", "build", "std"] }
